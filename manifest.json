@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+
+  "name": "Devui Dev Helper",
+  "version": "1.0",
+  "description": "A powerful browser extension for developers with multiple helpful tools",
+  "permissions": ["activeTab", "storage", "scripting"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["features/js-error-monitor/content.js"],
+      "run_at": "document_start"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["features/js-error-monitor/error-script.js"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

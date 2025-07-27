@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Devui Dev Helper</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <div id="appContainer">
+        <!-- 菜单页面 -->
+        <div id="menuPage" class="page active">
+            <div class="app-header">
+                <h2 class="app-title">Devui Dev Helper (v1.1)</h2>
+                <span id="manageFeaturesBtn" class="manage-icon">⚙️</span>
+            </div>
+            <ul class="feature-list" id="featureList"></ul>
+                    
+        </div>
+
+        <!-- 设置页面容器 -->
+        <div id="settingsPage" class="page">
+            <div class="header">
+                <button id="backButton" class="back-button">←</button>
+                <h2 class="page-title">Settings</h2>
+            </div>
+            <div id="settingsContent"></div>
+        </div>
+    </div>
+    <script type="module" src="popup.js"></script>
+</body>
+</html>

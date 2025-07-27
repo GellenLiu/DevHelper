@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>功能管理 | Devui Dev Helper</title>
+    <link rel="stylesheet" href="popup.css">
+    <style>
+        body {
+            width: 350px;
+            padding: 0;
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .header {
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+        }
+        .page-title {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+            flex: 1;
+            text-align: center;
+        }
+        .content {
+            padding: 15px;
+        }
+        .section-title {
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #666;
+        }
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 20px 0;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .feature-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+        }
+        .feature-item:last-child {
+            border-bottom: none;
+        }
+        .feature-name {
+            flex: 1;
+            margin-left: 10px;
+            font-size: 14px;
+        }
+        .save-btn {
+            width: 100%;
+            padding: 10px;
+            background-color: #0078d7;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .save-btn:hover {
+            background-color: #005a9e;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2 class="page-title">功能管理</h2>
+    </div>
+    <div class="content">
+        <p class="section-title">选择要展示的功能:</p>
+        <ul class="feature-list" id="featureManagementList"></ul>
+        <button class="save-btn" id="saveFeaturesBtn">保存设置</button>
+    </div>
+
+    <script type="module">
+        import features from './feature.config.js';
+
+        // DOM元素
+        const featureList = document.getElementById('featureManagementList');
+        const saveBtn = document.getElementById('saveFeaturesBtn');
+
+        // 加载已保存的展示配置
+        chrome.storage.local.get('displayedFeatures', (result) => {
+            const displayedFeatures = result.displayedFeatures || features.map(f => f.id);
+            renderFeatureManagementList(displayedFeatures);
+        });
+
+        // 渲染功能管理列表
+        function renderFeatureManagementList(displayedFeatures) {
+            featureList.innerHTML = '';
+
+            features.forEach(feature => {
+                const isDisplayed = displayedFeatures.includes(feature.id);
+
+                // 创建列表项
+                const listItem = document.createElement('li');
+                listItem.className = 'feature-item';
+
+                // 复选框
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = `feature_${feature.id}`;
+                checkbox.checked = isDisplayed;
+                checkbox.dataset.featureId = feature.id;
+
+                // 功能名称
+                const label = document.createElement('label');
+                label.htmlFor = `feature_${feature.id}`;
+                label.className = 'feature-name';
+                label.textContent = feature.name;
+
+                // 组装列表项
+                listItem.appendChild(checkbox);
+                listItem.appendChild(label);
+                featureList.appendChild(listItem);
+            });
+        }
+
+        // 保存展示配置
+        saveBtn.addEventListener('click', () => {
+            const checkboxes = featureList.querySelectorAll('input[type="checkbox"]:checked');
+            const displayedFeatures = Array.from(checkboxes).map(cb => cb.dataset.featureId);
+
+            // 保存到storage
+            chrome.storage.local.set({ displayedFeatures }, () => {
+                // 通知popup页面刷新
+                chrome.runtime.sendMessage({ action: 'refreshFeatures' });
+                // 关闭当前标签页
+                window.close();
+            });
+        });
+    </script>
+</body>
+</html>

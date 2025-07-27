@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JS错误监控测试页面</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .error-section {
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .error-section h2 {
+            color: #d93025;
+            margin-top: 0;
+            border-bottom: 2px solid #ffcccc;
+            padding-bottom: 10px;
+        }
+        .button-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 12px;
+            margin-top: 15px;
+        }
+        button {
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            padding: 12px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+            text-align: left;
+        }
+        button:hover {
+            background-color: #3367d6;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .instructions {
+            background-color: #e8f0fe;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 30px;
+            border-left: 4px solid #4285f4;
+        }
+        .error-output {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #fff8e1;
+            border-radius: 6px;
+            height: 150px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 14px;
+            border: 1px solid #ffe082;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>JS错误监控插件测试页面</h1>
+        <p>点击下方按钮触发不同类型的JavaScript错误，用于验证错误监控插件功能</p>
+    </div>
+
+    <div class="instructions">
+        <h3>使用说明</h3>
+        <ol>
+            <li>确保JS Error Monitor插件已启用</li>
+            <li>在插件配置中添加当前域名到监控列表</li>
+            <li>打开浏览器开发者工具(Console面板)查看错误输出</li>
+            <li>点击下方按钮触发各种类型的错误</li>
+            <li>验证插件是否能捕获到这些错误</li>
+        </ol>
+    </div>
+
+    <div class="error-section">
+        <h2>变量和类型错误</h2>
+        <div class="button-group">
+            <button onclick="triggerUndefinedVariable()">未定义变量错误</button>
+            <button onclick="triggerTypeError()">类型错误 (非函数调用)</button>
+            <button onclick="triggerReferenceError()">引用错误 (访问不存在属性)</button>
+            <button onclick="triggerRangeError()">范围错误 (数组越界)</button>
+        </div>
+    </div>
+
+    <div class="error-section">
+        <h2>语法和代码错误</h2>
+        <div class="button-group">
+            <button onclick="triggerSyntaxError()">语法错误 (通过eval)</button>
+            <button onclick="triggerEvalError()">Eval错误 (已废弃但仍可测试)</button>
+            <button onclick="triggerURIError()">URI编码错误</button>
+        </div>
+    </div>
+
+    <div class="error-section">
+        <h2>网络和资源错误</h2>
+        <div class="button-group">
+            <button onclick="triggerFetchError()">Fetch请求错误</button>
+            <button onclick="triggerImageLoadError()">图片加载错误</button>
+            <button onclick="triggerScriptLoadError()">脚本加载错误</button>
+        </div>
+    </div>
+
+    <div class="error-section">
+        <h2>Promise和异步错误</h2>
+        <div class="button-group">
+            <button onclick="triggerUnhandledRejection()">未处理的Promise拒绝</button>
+            <button onclick="triggerAsyncError()">异步函数错误</button>
+            <button onclick="triggerTimeoutError()">定时器回调错误</button>
+        </div>
+    </div>
+
+    <div class="error-section">
+        <h2>控制台错误</h2>
+        <div class="button-group">
+            <button onclick="triggerConsoleError()">Console.error输出</button>
+            <button onclick="triggerConsoleWarn()">Console.warn输出</button>
+        </div>
+        <div class="error-output" id="errorOutput">
+            错误输出将显示在这里...
+        </div>
+    </div>
+
+    <script>
+        // 重写console方法以在页面上显示输出
+        (function() {
+            const errorOutput = document.getElementById('errorOutput');
+            const originalError = console.error;
+            const originalWarn = console.warn;
+
+            console.error = function(...args) {
+                errorOutput.innerHTML += `[${new Date().toLocaleTimeString()}] ERROR: ${args.join(' ')}
+`;
+                errorOutput.scrollTop = errorOutput.scrollHeight;
+                originalError.apply(console, args);
+            };
+
+            console.warn = function(...args) {
+                errorOutput.innerHTML += `[${new Date().toLocaleTimeString()}] WARN: ${args.join(' ')}
+`;
+                errorOutput.scrollTop = errorOutput.scrollHeight;
+                originalWarn.apply(console, args);
+            };
+        })();
+
+        // 变量和类型错误
+        function triggerUndefinedVariable() {
+            // 访问未定义的变量
+            console.log(undefinedVariable);
+        }
+
+        function triggerTypeError() {
+            // 尝试调用非函数
+            const nonFunction = '这不是函数';
+            nonFunction();
+        }
+
+        function triggerReferenceError() {
+            // 访问对象不存在的属性
+            const obj = {};
+            console.log(obj.nonExistentProperty.nestedProperty);
+        }
+
+        function triggerRangeError() {
+            // 创建长度为负数的数组
+            const arr = new Array(-1);
+        }
+
+        // 语法和代码错误
+        function triggerSyntaxError() {
+            // 通过eval触发语法错误
+            eval('function() { missing closing brace');
+        }
+
+        function triggerEvalError() {
+            // 尝试在严格模式下使用eval
+            'use strict';
+            eval('var x = 1;');
+            console.error('注意: 现代浏览器可能不会为此触发EvalError');
+        }
+
+        function triggerURIError() {
+            // 无效的URI编码
+            decodeURIComponent('%');
+        }
+
+        // 网络和资源错误
+        function triggerFetchError() {
+            // 请求不存在的资源
+            fetch('/nonexistent-resource.json')
+                .then(response => response.json());
+        }
+
+        function triggerImageLoadError() {
+            // 加载不存在的图片
+            const img = new Image();
+            img.src = '/nonexistent-image.png';
+            img.onerror = function() {
+                console.error('图片加载失败: 404 Not Found');
+            };
+        }
+
+        function triggerScriptLoadError() {
+            // 加载不存在的脚本
+            const script = document.createElement('script');
+            script.src = '/nonexistent-script.js';
+            script.onerror = function() {
+                console.error('脚本加载失败: 404 Not Found');
+            };
+            document.body.appendChild(script);
+        }
+
+        // Promise和异步错误
+        function triggerUnhandledRejection() {
+            // 创建未处理的Promise拒绝
+            new Promise((resolve, reject) => {
+                reject(new Error('这是一个未处理的Promise拒绝错误'));
+            });
+        }
+
+        async function triggerAsyncError() {
+            // 异步函数中的错误
+            throw new Error('异步函数中抛出的错误');
+        }
+
+        function triggerTimeoutError() {
+            // 定时器回调中的错误
+            setTimeout(() => {
+                throw new Error('定时器回调中抛出的错误');
+            }, 1000);
+            console.log('1秒后将触发定时器错误...');
+        }
+
+        // 控制台错误
+        function triggerConsoleError() {
+            // 直接调用console.error
+            console.error('这是一个console.error输出的错误信息');
+        }
+
+        function triggerConsoleWarn() {
+            // 直接调用console.warn
+            console.warn('这是一个console.warn输出的警告信息');
+        }
+    </script>
+</body>
+</html>
