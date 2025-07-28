@@ -82,63 +82,7 @@
         <button class="save-btn" id="saveFeaturesBtn">保存设置</button>
     </div>
 
-    <script type="module">
-        import features from './feature.config.js';
+    <script type="module" src="feature-management.js"></script>
 
-        // DOM元素
-        const featureList = document.getElementById('featureManagementList');
-        const saveBtn = document.getElementById('saveFeaturesBtn');
-
-        // 加载已保存的展示配置
-        chrome.storage.local.get('displayedFeatures', (result) => {
-            const displayedFeatures = result.displayedFeatures || features.map(f => f.id);
-            renderFeatureManagementList(displayedFeatures);
-        });
-
-        // 渲染功能管理列表
-        function renderFeatureManagementList(displayedFeatures) {
-            featureList.innerHTML = '';
-
-            features.forEach(feature => {
-                const isDisplayed = displayedFeatures.includes(feature.id);
-
-                // 创建列表项
-                const listItem = document.createElement('li');
-                listItem.className = 'feature-item';
-
-                // 复选框
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.id = `feature_${feature.id}`;
-                checkbox.checked = isDisplayed;
-                checkbox.dataset.featureId = feature.id;
-
-                // 功能名称
-                const label = document.createElement('label');
-                label.htmlFor = `feature_${feature.id}`;
-                label.className = 'feature-name';
-                label.textContent = feature.name;
-
-                // 组装列表项
-                listItem.appendChild(checkbox);
-                listItem.appendChild(label);
-                featureList.appendChild(listItem);
-            });
-        }
-
-        // 保存展示配置
-        saveBtn.addEventListener('click', () => {
-            const checkboxes = featureList.querySelectorAll('input[type="checkbox"]:checked');
-            const displayedFeatures = Array.from(checkboxes).map(cb => cb.dataset.featureId);
-
-            // 保存到storage
-            chrome.storage.local.set({ displayedFeatures }, () => {
-                // 通知popup页面刷新
-                chrome.runtime.sendMessage({ action: 'refreshFeatures' });
-                // 关闭当前标签页
-                window.close();
-            });
-        });
-    </script>
 </body>
 </html>
