@@ -1,5 +1,8 @@
 
-<img style="display: block; margin: 0 auto;" src="icons/icon128.png" alt="DevUI Dev Helper Logo" />
+<div align="center">
+  <img src="icons/icon128.png" alt="DevUI Dev Helper Logo" />
+</div>
+
 
 # DevUI Dev Helper - 开发者工具扩展
 
@@ -15,9 +18,9 @@
 - 自定义错误消息过滤
 - 错误通知管理
 
-<div style="text-align: center;">
+<div align="center">
   <img src="features/js-error-monitor/assets/demo.png" alt="js-error-monitor 效果图">
-  <p style="font-size: 0.8em; margin-top: 0.5em;">js-error-monitor 效果图</p>
+  <p align="center" style="font-size: 0.8em; margin-top: 0.5em;">js-error-monitor 效果图</p>
 </div>
 
 
