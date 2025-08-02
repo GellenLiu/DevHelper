@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Devui Dev Helper",
+  "name": "DevUI Dev Helper",
   "version": "1.0",
   "description": "A powerful browser extension for developers with multiple helpful tools",
   "permissions": [

@@ -22,6 +22,7 @@
         "isEnabled": true,
         "settingsUrl": "/features/env-configurator/config.html",
         "storageKey": "envConfiguratorConfig",
-        "createdAt": "2023-01-20"
+        "createdAt": "2023-01-20",
+        "category": "development"
     }
 }

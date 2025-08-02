@@ -22,10 +22,16 @@ async function loadFeatures() {
                         console.warn(`Manifest for feature ${module.id} is null`);
                         return null;
                     }
+                    // 确保devui_feature存在
+                    if (!manifest.devui_feature) {
+                        console.warn(`devui_feature not found in manifest for feature ${module.id}`);
+                        return null;
+                    }
                     return {
                         ...manifest.devui_feature,
                         name: manifest.name,
-                        id: module.id // 确保每个功能有唯一ID
+                        id: module.id, // 确保每个功能有唯一ID
+                        description: manifest.description // 从manifest中提取描述
                     };
                 } catch (error) {
                     console.error(`Failed to load manifest for feature ${module.id}:`, error);

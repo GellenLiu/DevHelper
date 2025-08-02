@@ -16,10 +16,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 异步加载功能配置
     features = await loadFeatures();
 
-    // 获取displayedFeatures并渲染列表
-    chrome.storage.local.get('displayedFeatures', (result) => {
-        const displayedFeatures = result.displayedFeatures || features.map(f => f.id);
-        renderFeatureList(featureList, displayedFeatures);
+    // 获取installedFeatures并渲染列表
+    chrome.storage.local.get('installedFeatures', (result) => {
+        const installedFeatures = result.installedFeatures || features.map(f => f.id);
+        renderFeatureList(featureList, installedFeatures);
     });
 
     // 返回按钮事件
@@ -36,13 +36,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 添加消息监听器以刷新功能列表
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-        if (message.action === 'refreshFeatures') {
+        if (message.action === 'featuresUpdated' || message.action === 'refreshFeatures') {
             // 重新加载功能配置
             loadFeatures().then(newFeatures => {
                 features = newFeatures;
-                chrome.storage.local.get('displayedFeatures', (result) => {
-                    const displayedFeatures = result.displayedFeatures || features.map(f => f.id);
-                    renderFeatureList(featureList, displayedFeatures);
+                chrome.storage.local.get('installedFeatures', (result) => {
+                    const installedFeatures = result.installedFeatures || features.map(f => f.id);
+                    renderFeatureList(featureList, installedFeatures);
                 });
             });
         }
@@ -50,14 +50,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // 渲染功能列表
-function renderFeatureList(container, displayedFeatures) {
+function renderFeatureList(container, installedFeatures) {
     container.innerHTML = '';
 
     // 加载所有功能的配置状态
-    const storageKeys = features.map(f => f.storageKey);
-    chrome.storage.local.get(storageKeys, (results) => {
-        const filteredFeatures = features.filter(f => displayedFeatures.includes(f.id));
-        filteredFeatures.forEach(feature => {
+        const storageKeys = features.map(f => f.storageKey);
+        chrome.storage.local.get(storageKeys, (results) => {
+            const filteredFeatures = features.filter(f => installedFeatures.includes(f.id));
+            filteredFeatures.forEach(feature => {
             // 创建列表项
             const listItem = document.createElement('li');
             listItem.className = 'feature-item';

@@ -35,6 +35,7 @@
         "isEnabled": true,
         "settingsUrl": "/features/js-error-monitor/config.html",
         "storageKey": "jsErrorMonitorConfig",
-        "createdAt": "2023-01-15"
+        "createdAt": "2023-01-15",
+        "category": "monitoring"
     }
 }
