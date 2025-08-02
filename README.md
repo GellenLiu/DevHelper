@@ -11,7 +11,7 @@
 
 ## Features
 
-### JS Error Monitor
+### JS Error Monitor - 前端错误监控、稳定性指标提效工具
 > 实时监控网页JS错误并提示，避免在未打开控制台时漏掉重要错误。在错误上报的第一时间处理问题，而不是在埋点平台后续追踪。
 - 实时JavaScript错误跟踪
 - 可配置的错误类型过滤 (SyntaxError, ReferenceError, etc.)
@@ -24,7 +24,7 @@
 </div>
 
 
-### Env Configurator
+### Env Configurator - 环境配置修改器 - 前端特性开关切换提效工具
 > 劫持环境配置，修改配置参数，无时序影响
 - 自定义环境设置参数
 - 开发环境快速切换
