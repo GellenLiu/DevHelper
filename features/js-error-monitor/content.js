@@ -1,4 +1,3 @@
-console.log("content.js loaded");
 // 注入错误监控脚本到页面
 function injectErrorScript() {
   // 检查脚本是否已注入
@@ -12,7 +11,6 @@ function injectErrorScript() {
   script.type = "text/javascript";
   // 脚本加载完成后发送配置
   script.onload = function () {
-    console.log("[content.js] error-script加载完成，发送初始配置");
     loadAndSendConfig();
   };
   document.head.appendChild(script);
@@ -69,21 +67,37 @@ window.addEventListener("message", (event) => {
 });
 
 function init() {
-  // 注入监控脚本
-  injectErrorScript();
+  // 先加载配置，根据配置决定是否注入脚本
+  chrome.storage.local.get("jsErrorMonitorConfig", (result) => {
+    const config = result.jsErrorMonitorConfig || {
+      enabled: false,
+      monitoredDomains: [],
+      errorTypes: {
+        windowError: true,
+        errorEvent: true,
+        unhandledRejection: true,
+        consoleError: true,
+      },
+    };
 
-  // 监听来自扩展的配置更新消息
-  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (message.type === "JS_ERROR_MONITOR_CONFIG_UPDATED") {
-      // 将更新的配置发送给注入脚本
-      window.postMessage(
-        {
-          type: "DEVUI_JS_ERROR_MONITOR_CONFIG",
-          config: message.config,
-        },
-        "*"
-      );
+    // 只有启用时才注入脚本
+    if (config.enabled) {
+      injectErrorScript();
     }
+
+    // 监听来自扩展的配置更新消息
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+      if (message.type === "JS_ERROR_MONITOR_CONFIG_UPDATED") {
+        // 将更新的配置发送给注入脚本
+        window.postMessage(
+          {
+            type: "DEVUI_JS_ERROR_MONITOR_CONFIG",
+            config: message.config,
+          },
+          "*"
+        );
+      }
+    });
   });
 }
 

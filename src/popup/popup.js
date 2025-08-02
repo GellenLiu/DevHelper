@@ -1,16 +1,20 @@
-import features from './feature.config.js';
+import loadFeatures from '../../feature.config.js';
 
 // DOM元素
 let menuPage, settingsPage, settingsContent, backButton;
+let features = []; // 存储加载的功能配置
 
 // DOM加载完成后初始化
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     // 获取DOM元素
     menuPage = document.getElementById('menuPage');
     settingsPage = document.getElementById('settingsPage');
     settingsContent = document.getElementById('settingsContent');
     backButton = document.getElementById('backButton');
     const featureList = document.getElementById('featureList');
+
+    // 异步加载功能配置
+    features = await loadFeatures();
 
     // 获取displayedFeatures并渲染列表
     chrome.storage.local.get('displayedFeatures', (result) => {
@@ -26,16 +30,20 @@ document.addEventListener('DOMContentLoaded', () => {
     // 功能管理按钮事件
     document.getElementById('manageFeaturesBtn').addEventListener('click', () => {
         chrome.tabs.create({
-            url: chrome.runtime.getURL('feature-management.html')
+            url: chrome.runtime.getURL('src/management/feature-management.html')
         });
     });
 
     // 添加消息监听器以刷新功能列表
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         if (message.action === 'refreshFeatures') {
-            chrome.storage.local.get('displayedFeatures', (result) => {
-                const displayedFeatures = result.displayedFeatures || features.map(f => f.id);
-                renderFeatureList(featureList, displayedFeatures);
+            // 重新加载功能配置
+            loadFeatures().then(newFeatures => {
+                features = newFeatures;
+                chrome.storage.local.get('displayedFeatures', (result) => {
+                    const displayedFeatures = result.displayedFeatures || features.map(f => f.id);
+                    renderFeatureList(featureList, displayedFeatures);
+                });
             });
         }
     });

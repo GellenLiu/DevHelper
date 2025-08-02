@@ -1,13 +1,20 @@
-import features from './feature.config.js';
+import loadFeatures from '../../feature.config.js';
 
 // DOM元素
 const featureList = document.getElementById('featureManagementList');
 const saveBtn = document.getElementById('saveFeaturesBtn');
+let features = []; // 存储加载的功能配置
 
-// 加载已保存的展示配置
-chrome.storage.local.get('displayedFeatures', (result) => {
-    const displayedFeatures = result.displayedFeatures || features.map(f => f.id);
-    renderFeatureManagementList(displayedFeatures);
+// 页面加载完成后初始化
+document.addEventListener('DOMContentLoaded', async () => {
+    // 异步加载功能配置
+    features = await loadFeatures();
+
+    // 加载已保存的展示配置
+    chrome.storage.local.get('displayedFeatures', (result) => {
+        const displayedFeatures = result.displayedFeatures || features.map(f => f.id);
+        renderFeatureManagementList(displayedFeatures);
+    });
 });
 
 // 渲染功能管理列表

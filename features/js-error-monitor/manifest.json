@@ -1,0 +1,40 @@
+{
+    "manifest_version": 3,
+    "name": "JS Error Monitor",
+    "version": "1.0.0",
+    "description": "监控网页中的JavaScript错误，并提供详细的错误信息和堆栈跟踪。",
+    "author": "DevUI",
+    "action": {
+        "default_icon": {
+            "16": "../../icons/icon16.png",
+            "48": "../../icons/icon48.png",
+            "128": "../../icons/icon128.png"
+        }
+    },
+    "icons": {
+        "16": "../../icons/icon16.png",
+        "48": "../../icons/icon48.png",
+        "128": "../../icons/icon128.png"
+    },
+    "permissions": ["activeTab", "storage", "scripting"],
+    "content_scripts": [
+        {
+            "matches": ["<all_urls>"],
+            "js": ["content.js"],
+            "run_at": "document_start"
+        }
+    ],
+    "web_accessible_resources": [
+        {
+            "resources": ["error-script.js"],
+            "matches": ["<all_urls>"]
+        }
+    ],
+    "devui_feature": {
+        "id": "js-error-monitor",
+        "isEnabled": true,
+        "settingsUrl": "/features/js-error-monitor/config.html",
+        "storageKey": "jsErrorMonitorConfig",
+        "createdAt": "2023-01-15"
+    }
+}
