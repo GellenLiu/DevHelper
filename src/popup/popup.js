@@ -94,11 +94,24 @@ function renderFeatureList(container, installedFeatures) {
             listItem.appendChild(nameSpan);
             listItem.appendChild(toggleContainer);
 
-            // 点击列表项进入设置页面
+            // 点击列表项处理
             listItem.addEventListener('click', (e) => {
                 // 防止点击开关时触发页面切换
                 if (e.target.tagName !== 'INPUT' && e.target.className !== 'toggle-slider') {
-                    showSettingsPage(feature);
+                    // 对于matechat功能，打开sidePanel而不是设置页面
+                    if (feature.id === 'matechat') {
+                        // 获取当前活动标签页ID
+                        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+                            if (tabs.length > 0) {
+                                const tabId = tabs[0].id;
+                                // 打开sidePanel
+                                chrome.sidePanel.open({ tabId: tabId });
+                            }
+                        });
+                    } else {
+                        // 其他功能保持原有行为
+                        showSettingsPage(feature);
+                    }
                 }
             });
 
@@ -120,25 +133,39 @@ function showSettingsPage(feature) {
     // 更新标题
     document.querySelector('.page-title').textContent = feature.name;
 
-    // 加载设置页面内容
-    fetch(feature.settingsUrl)
-        .then(response => response.text())
-        .then(html => {
-            // 插入设置内容
-            settingsContent.innerHTML = html;
+    // 清理旧的内容和事件监听器
+    console.log('清理旧的内容和事件监听器');
+    while (settingsContent.firstChild) {
+        settingsContent.removeChild(settingsContent.firstChild);
+    }
 
-            // 执行页面中的脚本
-            executeScriptsInContent(settingsContent);
+    // 应用宽度设置
+    if (feature.width) {
+        document.body.style.width = `${feature.width}px`;
+        console.log('设置popup宽度为:', feature.width, 'px');
+    }
 
-            // 切换页面显示
-            menuPage.classList.remove('active');
-            settingsPage.classList.add('active');
-        })
-        .catch(error => {
-            settingsContent.innerHTML = `<div class="error-message">Failed to load settings: ${error.message}</div>`;
-            menuPage.classList.remove('active');
-            settingsPage.classList.add('active');
-        });
+    // 应用header显示设置
+    const header = document.querySelector('.header');
+    if (header) {
+        if (feature.showHeader !== undefined) {
+            header.style.display = feature.showHeader ? 'block' : 'none';
+            console.log('设置header显示:', feature.showHeader);
+        }
+    }
+
+    // 使用iframe加载内容
+    console.log('使用iframe加载内容:', feature.settingsUrl);
+    const iframe = document.createElement('iframe');
+    iframe.src = chrome.runtime.getURL(feature.settingsUrl);
+    iframe.style.width = '100%';
+    iframe.style.height = feature.height ? `${feature.height}px` : '100%';
+    iframe.style.border = 'none';
+    settingsContent.appendChild(iframe);
+
+    // 切换页面显示
+    menuPage.classList.remove('active');
+    settingsPage.classList.add('active');
 }
 
 // 执行内容中的脚本

@@ -10,7 +10,8 @@ async function loadFeatures() {
         // 定义功能模块配置，新增功能只需在此添加条目
         const featureModules = [
             { id: 'js-error-monitor', path: 'features/js-error-monitor/manifest.json' },
-            { id: 'env-configurator', path: 'features/env-configurator/manifest.json' }
+            { id: 'env-configurator', path: 'features/env-configurator/manifest.json' },
+            { id: 'matechat', path: 'features/matechat/manifest.json' }
         ];
 
         // 并行加载所有功能模块的manifest.json文件

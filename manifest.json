@@ -1,12 +1,16 @@
 {
   "manifest_version": 3,
+  "background": {
+    "service_worker": "src/background.js"
+  },
   "name": "DevUI Dev Helper",
   "version": "1.0",
   "description": "A powerful browser extension for developers with multiple helpful tools",
   "permissions": [
     "activeTab",
     "storage",
-    "scripting"
+    "scripting",
+    "sidePanel"
   ],
   "action": {
     "default_popup": "src/popup/popup.html",
@@ -44,8 +48,15 @@
       ]
     }
   ],
-  "features": [
-    "features/js-error-monitor/manifest.json",
-    "features/env-configurator/manifest.json"
-  ]
+  "commands": {
+    "open-matechat": {
+      "suggested_key": {
+        "default": "Ctrl+M"
+      },
+      "description": "打开MateChat页面"
+    }
+  },
+  "side_panel": {
+    "default_path": "features/matechat/index.html"
+  }
 }

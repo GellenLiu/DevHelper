@@ -24,11 +24,14 @@ body {
 
 .page {
     display: none;
-    padding: 15px;
 }
 
 .page.active {
     display: block;
+}
+
+#menuPage {
+    padding: 15px;
 }
 
 .app-title {
@@ -46,8 +49,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 15px;
-    padding-bottom: 10px;
+    padding: 15px;
     border-bottom: 1px solid #eee;
 }
 
