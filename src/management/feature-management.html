@@ -12,6 +12,7 @@
             --text-secondary: #666;
             --border-color: #eee;
             --success-color: #00b42a;
+            --feature-card-width: 320px;
             --warning-color: #ff7d00;
             --danger-color: #f53f3f;
             --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
@@ -159,11 +160,38 @@
         }
 
         .feature-header {
-            padding: 20px;
+            padding: 15px;
             border-bottom: 1px solid var(--border-color);
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            gap: 12px;
+        }
+
+        .feature-icon-container {
+            flex-shrink: 0;
+        }
+
+        .feature-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 6px;
+            object-fit: contain;
+        }
+
+        .letter-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .feature-title-container {
+            flex-grow: 1;
         }
 
         .feature-title {

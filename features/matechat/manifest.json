@@ -14,15 +14,15 @@
     },
     "action": {
         "default_icon": {
-            "16": "../../icons/icon16.png",
-            "48": "../../icons/icon48.png",
-            "128": "../../icons/icon128.png"
+            "16": "./matechat.png",
+            "48": "./matechat.png",
+            "128": "./matechat.png"
         }
     },
     "icons": {
-        "16": "../../icons/icon16.png",
-        "48": "../../icons/icon48.png",
-        "128": "../../icons/icon128.png"
+        "16": "./matechat.png",
+        "48": "./matechat.png",
+        "128": "./matechat.png"
     },
     "permissions": ["activeTab", "storage"],
     "side_panel": {

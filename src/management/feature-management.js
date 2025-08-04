@@ -90,9 +90,26 @@ function renderFeatureGrid() {
 
         const card = document.createElement('div');
         card.className = 'feature-card';
+        
+        // 生成图标HTML
+        let iconHtml = '';
+        if (feature.icon) {
+            // 如果有图标配置，使用图标
+            iconHtml = `<img src="${feature.icon}" class="feature-icon" alt="${feature.name} icon">`;
+        } else {
+            // 如果没有图标配置，使用首字母作为字母图标
+            const firstLetter = feature.name.charAt(0).toUpperCase();
+            // 生成随机背景色
+            const bgColor = `hsl(${Math.random() * 360}, 70%, 60%)`;
+            iconHtml = `<div class="letter-icon" style="background-color: ${bgColor}">${firstLetter}</div>`;
+        }
+        
         card.innerHTML = `
             <div class="feature-header">
-                <div>
+                <div class="feature-icon-container">
+                    ${iconHtml}
+                </div>
+                <div class="feature-title-container">
                     <h3 class="feature-title">${feature.name}</h3>
                     <span class="feature-category">${categoryName}</span>
                 </div>
