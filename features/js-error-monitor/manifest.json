@@ -33,9 +33,10 @@
     "devui_feature": {
         "id": "js-error-monitor",
         "isEnabled": true,
+        "toggle": true,
         "settingsUrl": "/features/js-error-monitor/config.html",
         "storageKey": "jsErrorMonitorConfig",
-        "createdAt": "2023-01-15",
+        "createdAt": "2025-08-14",
         "category": "monitoring",
         "height": 500
     }

@@ -95,7 +95,9 @@ function renderFeatureGrid() {
         let iconHtml = '';
         if (feature.icon) {
             // 如果有图标配置，使用图标
-            iconHtml = `<img src="${feature.icon}" class="feature-icon" alt="${feature.name} icon">`;
+            // 使用chrome.runtime.getURL获取正确的图标路径
+            const iconUrl = chrome.runtime.getURL(feature.icon);
+            iconHtml = `<img src="${iconUrl}" class="feature-icon" alt="${feature.name} icon">`;
         } else {
             // 如果没有图标配置，使用首字母作为字母图标
             const firstLetter = feature.name.charAt(0).toUpperCase();

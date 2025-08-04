@@ -20,6 +20,7 @@
     "devui_feature": {
         "id": "env-configurator",
         "isEnabled": true,
+        "toggle": true,
         "settingsUrl": "/features/env-configurator/config.html",
         "storageKey": "envConfiguratorConfig",
         "createdAt": "2023-01-20",

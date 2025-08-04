@@ -33,7 +33,8 @@ async function loadFeatures() {
                         name: manifest.name,
                         id: module.id, // 确保每个功能有唯一ID
                         description: manifest.description, // 从manifest中提取描述
-                        icon: manifest.icons?.[48] || manifest.action?.default_icon?.[48] // 优先使用48px图标
+                        // 优先使用devui_feature中的icon，没有则回退到manifest中的icons或action.default_icon
+                        icon: manifest.devui_feature?.icon
                     };
                 } catch (error) {
                     console.error(`Failed to load manifest for feature ${module.id}:`, error);
@@ -51,3 +52,5 @@ async function loadFeatures() {
 }
 
 export default loadFeatures;
+
+// ...existing code...

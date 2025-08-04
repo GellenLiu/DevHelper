@@ -31,9 +31,11 @@
     "devui_feature": {
         "id": "matechat",
         "isEnabled": true,
+        "toggle": false,
+        "icon": "/features/matechat/matechat.png",
         "settingsUrl": "/features/matechat/index.html",
         "storageKey": "matechatConfig",
-        "createdAt": "2023-10-10",
+        "createdAt": "2025-08-14",
         "category": "communication",
         "height": 580,
         "width": 350,

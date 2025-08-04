@@ -62,37 +62,70 @@ function renderFeatureList(container, installedFeatures) {
             const listItem = document.createElement('li');
             listItem.className = 'feature-item';
 
+            const listItemLeft = document.createElement('div');
+            listItemLeft.className = 'feature-item-left';
+
+            // 创建图标容器
+            const iconContainer = document.createElement('div');
+            iconContainer.className = 'feature-icon-container';
+
+            // 生成图标
+            if (feature.icon) {
+                // 如果有图标配置，使用图标
+                const iconUrl = chrome.runtime.getURL(feature.icon);
+                const iconImg = document.createElement('img');
+                iconImg.src = iconUrl;
+                iconImg.className = 'feature-icon';
+                iconImg.alt = feature.name + ' icon';
+                iconContainer.appendChild(iconImg);
+            } else {
+                // 如果没有图标配置，使用首字母作为字母图标
+                const firstLetter = feature.name.charAt(0).toUpperCase();
+                // 生成随机背景色
+                const bgColor = `hsl(${Math.random() * 360}, 70%, 60%)`;
+                const letterIcon = document.createElement('div');
+                letterIcon.className = 'letter-icon';
+                letterIcon.style.backgroundColor = bgColor;
+                letterIcon.textContent = firstLetter;
+                iconContainer.appendChild(letterIcon);
+            }
+
             // 功能名称
             const nameSpan = document.createElement('span');
             nameSpan.className = 'feature-name';
             nameSpan.textContent = feature.name;
 
-            // 开关
-            const toggleContainer = document.createElement('label');
-            toggleContainer.className = 'toggle-switch';
-
-            const toggleInput = document.createElement('input');
-            toggleInput.type = 'checkbox';
-            toggleInput.checked = results[feature.storageKey]?.enabled || false;
-
-            // 保存开关状态变化
-            toggleInput.addEventListener('change', () => {
-                const config = results[feature.storageKey] || { enabled: false };
-                config.enabled = toggleInput.checked;
-                chrome.storage.local.set({
-                    [feature.storageKey]: config
-                });
-            });
-
-            const toggleSlider = document.createElement('span');
-            toggleSlider.className = 'toggle-slider';
-
-            toggleContainer.appendChild(toggleInput);
-            toggleContainer.appendChild(toggleSlider);
-
             // 组装列表项
-            listItem.appendChild(nameSpan);
-            listItem.appendChild(toggleContainer);
+            listItem.appendChild(listItemLeft);
+            listItemLeft.appendChild(iconContainer);
+            listItemLeft.appendChild(nameSpan);
+
+            // 根据toggle字段决定是否显示开关
+            if (feature.toggle !== false) {
+                // 开关
+                const toggleContainer = document.createElement('label');
+                toggleContainer.className = 'toggle-switch';
+
+                const toggleInput = document.createElement('input');
+                toggleInput.type = 'checkbox';
+                toggleInput.checked = results[feature.storageKey]?.enabled || false;
+
+                // 保存开关状态变化
+                toggleInput.addEventListener('change', () => {
+                    const config = results[feature.storageKey] || { enabled: false };
+                    config.enabled = toggleInput.checked;
+                    chrome.storage.local.set({
+                        [feature.storageKey]: config
+                    });
+                });
+
+                const toggleSlider = document.createElement('span');
+                toggleSlider.className = 'toggle-slider';
+
+                toggleContainer.appendChild(toggleInput);
+                toggleContainer.appendChild(toggleSlider);
+                listItem.appendChild(toggleContainer);
+            }
 
             // 点击列表项处理
             listItem.addEventListener('click', (e) => {
@@ -142,7 +175,6 @@ function showSettingsPage(feature) {
     // 应用宽度设置
     if (feature.width) {
         document.body.style.width = `${feature.width}px`;
-        console.log('设置popup宽度为:', feature.width, 'px');
     }
 
     // 应用header显示设置
@@ -150,12 +182,9 @@ function showSettingsPage(feature) {
     if (header) {
         if (feature.showHeader !== undefined) {
             header.style.display = feature.showHeader ? 'block' : 'none';
-            console.log('设置header显示:', feature.showHeader);
         }
     }
 
-    // 使用iframe加载内容
-    console.log('使用iframe加载内容:', feature.settingsUrl);
     const iframe = document.createElement('iframe');
     iframe.src = chrome.runtime.getURL(feature.settingsUrl);
     iframe.style.width = '100%';
