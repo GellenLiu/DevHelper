@@ -58,7 +58,6 @@ window.addEventListener("message", (event) => {
   // 处理错误消息
   if (event.data.type === "DEVUI_JS_ERROR_OCCURRED") {
     // 这里可以添加错误上报逻辑
-    console.log("DevUI Error Monitor:", event.data.error);
   }
   // 响应配置请求
   else if (event.data.type === "DEVUI_JS_ERROR_MONITOR_GET_CONFIG") {

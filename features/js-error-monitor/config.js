@@ -1,5 +1,3 @@
-console.log("config init");
-
 // 加载保存的配置
 function loadConfig() {
   chrome.storage.local.get("jsErrorMonitorConfig", (result) => {
@@ -163,7 +161,6 @@ function renderDomainList(domains) {
 function addDomain() {
   const input = document.getElementById("newDomain");
   const domain = input.value.trim();
-  console.log("addDomain", domain);
   if (!domain) return;
 
   chrome.storage.local.get("jsErrorMonitorConfig", (result) => {
@@ -323,7 +320,8 @@ function saveConfig() {
      // 从过滤器列表收集所有过滤器
      const filterItems = document.querySelectorAll('#errorMessageFilterList .filter-item:not([style*="display: none"])');
      config.errorMessageFilters = Array.from(filterItems)
-         .map(item => item.querySelector('span').textContent.trim());
+         ?.map(item => item?.querySelector('span')?.textContent?.trim()) || [];
+
 
      chrome.storage.local.set({ jsErrorMonitorConfig: config }, () => {
       // 显示保存成功提示
@@ -356,7 +354,6 @@ function notifyContentScript(config) {
 }
 
 // 直接执行初始化代码，因为脚本在body末尾加载，DOM已就绪
-console.log("config init - DOMContentLoaded");
 loadConfig();
 // 添加按钮事件绑定
 document.getElementById("addDomain").addEventListener("click", addDomain);

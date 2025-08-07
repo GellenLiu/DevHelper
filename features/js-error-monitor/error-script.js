@@ -17,9 +17,8 @@
 
     // 检查当前域名是否在监控列表中（支持正则表达式）
     function isDomainMonitored() {
-        const currentDomain = window.location.hostname;
+        const currentDomain = window.location.href;
         const monitoredDomains = currentConfig.monitoredDomains || [];
-        
         if (monitoredDomains.length === 0) return false;
         
         return monitoredDomains.some(pattern => {
@@ -29,14 +28,22 @@
             if (pattern === '*') {
                 return true;
             }
+
+            if (currentDomain.includes(pattern)) {
+                return true;
+            }
             
             // 将通配符和正则表达式转换为有效的RegExp
-            const regexPattern = pattern
-                .replace(/[\[\]\\\/.+?^${}()|]/g, '\\$&') // 转义正则特殊字符
-                .replace(/\*/g, '.*'); // 将*转换为.*
-            
-            const regex = new RegExp(`^${regexPattern}$`, 'i');
-            return regex.test(currentDomain);
+            try {
+                const regexPattern = pattern
+                    .replace(/[\[\]\\\/.+?^${}()|]/g, '\\$&') // 转义正则特殊字符
+                    .replace(/\*/g, '.*'); // 将*转换为.*
+                const regex = new RegExp(`${regexPattern}`, 'i');
+                return regex.test(currentDomain);
+            } catch (error) {
+                console.error(`Failed to create regex from pattern: ${pattern}. Error: ${error.message}`);
+                return false;
+            }
         });
     }
 
@@ -74,7 +81,7 @@
             justify-content: space-between;
             align-items: center;
         `;
-        title.textContent = 'JS Error Detected';
+        title.textContent = 'JS Error Monitor';
 
         // 关闭按钮
         const closeBtn = document.createElement('button');
@@ -209,10 +216,8 @@
 
     // 监听window.onerror
     if (currentConfig.errorTypes.windowError) {
-        console.log('onerror 开启')
         const originalWindowError = window.onerror;
         window.onerror = function(message, source, lineno, colno, error) {
-            console.log('监听到onerror')
             const errorType = error ? error.name : 'window.onerror';
             handleError({
                 eventType: 'window.onerror',
@@ -233,9 +238,7 @@
 
     // 监听error事件
     if (currentConfig.errorTypes.errorEvent) {
-        console.log('error开启')
         window.addEventListener('error', (event) => {
-            console.log('监听到error')
             const errorType = event.error ? event.error.name : 'ResourceError';
             handleError({
                 eventType: 'error event',

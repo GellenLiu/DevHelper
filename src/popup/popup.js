@@ -167,7 +167,6 @@ function showSettingsPage(feature) {
     document.querySelector('.page-title').textContent = feature.name;
 
     // 清理旧的内容和事件监听器
-    console.log('清理旧的内容和事件监听器');
     while (settingsContent.firstChild) {
         settingsContent.removeChild(settingsContent.firstChild);
     }
