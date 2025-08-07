@@ -4,7 +4,7 @@
 </div>
 
 
-# DevUI Dev Helper - 开发者工具扩展
+# Dev Helper - 开发者工具扩展
 
 
 一个强大的前端开发提效工具，通过DevUI扩展增强您的开发工作流程。
@@ -29,6 +29,15 @@
 - 自定义环境设置参数
 - 开发环境快速切换
 
+### MateChat 智能助手
+
+> matechat个人智能助手
+> 
+<div align="center">
+  <img src="assets/matechat.png" alt="manage 效果图">
+  <p align="center" style="font-size: 0.8em; margin-top: 0.5em;">matechat智能助手</p>
+
+</div>
 
 ### 更多功能欢迎贡献
 
