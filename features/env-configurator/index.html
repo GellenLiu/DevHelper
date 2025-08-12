@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>环境配置修改器</title>
+    <link rel="stylesheet" href="index.css" />
+  </head>
+  <body>
+    <div class="container">
+      <div class="btn-group">
+        <button id="refreshConfig" class="btn-secondary">刷新配置</button>
+        <button id="applyConfig" class="btn-primary">应用配置</button>
+        <button id="settingsBtn" class="btn-secondary">设置</button>
+      </div>
+
+      <div class="import-export-group">
+        <button id="importConfig" class="btn-secondary">导入配置</button>
+        <button id="exportConfig" class="btn-secondary">导出配置</button>
+      </div>
+      <div class="config-selector">
+        <label for="configName">选择配置:</label>
+        <select id="configName">
+          <option value="default">默认配置</option>
+          <!-- 动态添加其他配置选项 -->
+        </select>
+      </div>
+
+      <div id="configVariables">
+        <!-- 配置变量将动态添加到这里 -->
+        <div class="config-item empty-state">
+          <p>未检测到配置变量，请确保网页已加载且配置正确。</p>
+        </div>
+      </div>
+    </div>
+
+    <script src="index.js"></script>
+  </body>
+</html>
