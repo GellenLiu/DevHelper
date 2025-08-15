@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router';
 
 
 defineProps<{ msg: string }>()
@@ -21,10 +22,26 @@ const toggle = (value: boolean) => {
     toggleState.value = value;
 };
 
+// 在组件中使用路由
+const router = useRouter();
 const handleSettingClick = () => {
-    console.log('点击了设置')
-    window.open('/config', '_blank')
+    console.log('点击了设置');
+    // 使用Vue Router导航到config路由
+    router.push('/config');
 }
+
+const getConfig = () => {
+    (window as any).chrome?.runtime?.sendMessage({ action: "getEnvConfig" }, (response: any) => {
+        if (response) {
+            console.log(response)
+        }
+    });
+}
+
+onMounted(() => {
+    getConfig()
+})
+
 
 
 </script>
@@ -102,6 +119,7 @@ const handleSettingClick = () => {
     .button-wrapper {
         display: flex;
         margin-bottom: 8px;
+        gap: 8px;
     }
 
     :deep(.devui-panel) {

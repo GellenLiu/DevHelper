@@ -14,3 +14,18 @@ function injectScript() {
   };
   document.head.appendChild(script);
 }
+
+// 监听来自override-script.js的getEnvConfig事件
+window.addEventListener("message", function (event) {
+  if (event.source !== window) return;
+  if (event.data.action === "getEnvConfig") {
+    window.postMessage(
+      {
+        action: "getEnvConfig",
+      },
+      "*"
+    );
+  }
+});
+
+injectScript();
