@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Environment Configuration</title>
+</head>
+<body>
+    <h1>Test Environment Configuration</h1>
+    <p>This page sets the window.service_cf3_config object for testing purposes.</p>
+
+    <script>
+        window.env = 'hcs';
+        // 设置测试用的window.service_cf3_config对象
+        window.service_cf3_config = {
+            ss: 'test_value',
+            apiUrl: 'https://api.example.com',
+            timeout: 5000,
+            debug: true,
+            array: [1, 2, 3]
+        };
+
+        window.platformConfig = {
+            test: {
+                env: 'hcs',
+            }
+        }
+    </script>
+</body>
+</html>

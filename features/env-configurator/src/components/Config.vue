@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import { Message } from 'vue-devui';
+import { LocalStorageKey } from '../constant/common';
 
 // 扩展Window接口，添加chrome属性声明
 declare global {
   interface Window {
     chrome?: {
       storage?: {
-        sync?: {
+        local?: {
           get: (keys: string[] | null, callback: (items: {[key: string]: any}) => void) => void;
           set: (items: {[key: string]: any}, callback?: () => void) => void;
         }
@@ -17,9 +19,7 @@ declare global {
 
 // 定义Chrome存储类型接口
 interface ChromeStorage {
-  domains?: string[];
-  variables?: string[];
-  presets?: PresetConfig[];
+  [key: string]: string[] | PresetConfig[] | undefined;
 }
 
 // 预设配置接口
@@ -36,33 +36,29 @@ const domains = ref<string[]>([]);
 const variablePath = ref('');
 const variables = ref<string[]>([]);
 const presets = ref<PresetConfig[]>([]);
-const errorMessage = ref('');
-const successMessage = ref('');
 const currentView = ref('domains'); // 当前视图: domains, variables, presets
 
 // 从Chrome存储加载配置
 function loadConfigs() {
   try {
     const chrome = window.chrome;
-    if (!chrome?.storage?.sync) {
+    if (!chrome?.storage?.local) {
       throw new Error('Chrome storage API is not available');
     }
 
-    chrome.storage.sync.get(['domains', 'variables', 'presets'], function (result: ChromeStorage) {
-      if (result.domains && Array.isArray(result.domains)) {
-        domains.value = result.domains;
+    chrome.storage.local.get([LocalStorageKey.Domains, LocalStorageKey.Variables, LocalStorageKey.Presets], function (result: ChromeStorage) {
+      if (result[LocalStorageKey.Domains as keyof ChromeStorage] && Array.isArray(result[LocalStorageKey.Domains as keyof ChromeStorage])) {
+        domains.value = result[LocalStorageKey.Domains as keyof ChromeStorage] as string[];
       }
-      if (result.variables && Array.isArray(result.variables)) {
-        variables.value = result.variables;
+      if (result[LocalStorageKey.Variables as keyof ChromeStorage] && Array.isArray(result[LocalStorageKey.Variables as keyof ChromeStorage])) {
+        variables.value = result[LocalStorageKey.Variables as keyof ChromeStorage] as string[];
       }
-      if (result.presets && Array.isArray(result.presets)) {
-        presets.value = result.presets;
+      if (result[LocalStorageKey.Presets as keyof ChromeStorage] && Array.isArray(result[LocalStorageKey.Presets as keyof ChromeStorage])) {
+        presets.value = result[LocalStorageKey.Presets as keyof ChromeStorage] as PresetConfig[];
       }
     });
   } catch (e) {
-    console.error('Failed to load configs:', e);
-    errorMessage.value = '加载配置失败';
-    setTimeout(() => errorMessage.value = '', 3000);
+    Message.error('加载配置失败');
   }
 }
 
@@ -70,22 +66,39 @@ function loadConfigs() {
 function saveConfigs() {
   try {
     const chrome = window.chrome;
-    if (!chrome?.storage?.sync) {
+    if (!chrome?.storage?.local) {
       throw new Error('Chrome storage API is not available');
     }
 
-    chrome.storage.sync.set({
-      domains: domains.value,
-      variables: variables.value,
-      presets: presets.value
+    chrome.storage.local.set({
+      [LocalStorageKey.Domains]: JSON.stringify(domains.value),
+      [LocalStorageKey.Variables]: JSON.stringify(variables.value),
+      [LocalStorageKey.Presets]: JSON.stringify(presets.value)
     }, function () {
-      successMessage.value = '配置已保存';
-      setTimeout(() => successMessage.value = '', 3000);
+      Message.success('配置已保存');
     });
   } catch (e) {
-    console.error('Failed to save configs:', e);
-    errorMessage.value = '保存配置失败';
-    setTimeout(() => errorMessage.value = '', 3000);
+    Message.error('保存配置失败');
+  }
+}
+
+// 查看预设配置
+function viewPreset(id: string) {
+  const preset = presets.value.find(p => p.id === id);
+  if (preset) {
+    // 可以在这里实现查看预设的逻辑，比如弹出详情对话框或切换到编辑视图
+    console.log('查看预设:', preset);
+    // 示例：显示预设详情
+    alert(`预设名称: ${preset.name}\n域名数量: ${preset.domains.length}\n变量数量: ${preset.variables.length}`);
+  }
+}
+
+// 删除预设配置
+function deletePreset(id: string) {
+  if (confirm('确定要删除这个预设吗？')) {
+    presets.value = presets.value.filter(p => p.id !== id);
+    saveConfigs();
+    Message.success('预设已删除');
   }
 }
 
@@ -93,14 +106,12 @@ function saveConfigs() {
 function addDomain() {
   const domainValue = domain.value.trim();
   if (!domainValue) {
-    errorMessage.value = '请输入域名';
-    setTimeout(() => errorMessage.value = '', 3000);
+    Message.error('请输入域名');
     return;
   }
 
   if (domains.value.includes(domainValue)) {
-    errorMessage.value = '该域名已存在';
-    setTimeout(() => errorMessage.value = '', 3000);
+    Message.error('该域名已存在');
     return;
   }
 
@@ -119,22 +130,19 @@ function removeDomain(item: string) {
 function addVariable() {
   const pathValue = variablePath.value.trim();
   if (!pathValue) {
-    errorMessage.value = '请输入变量路径';
-    setTimeout(() => errorMessage.value = '', 3000);
+    Message.error('请输入变量路径');
     return;
   }
 
   if (variables.value.includes(pathValue)) {
-    errorMessage.value = '该变量路径已存在';
-    setTimeout(() => errorMessage.value = '', 3000);
+    Message.error('该变量路径已存在');
     return;
   }
 
   // 简单的变量路径验证
   const pathRegex = /^window(\.[a-zA-Z0-9_]+)+$/;
   if (!pathRegex.test(pathValue)) {
-    errorMessage.value = '请输入有效的变量路径格式（例如：window.service_cf3_config）';
-    setTimeout(() => errorMessage.value = '', 3000);
+    Message.error('请输入有效的变量路径格式（例如：window.service_cf3_config）');
     return;
   }
 
@@ -166,10 +174,6 @@ defineProps<{ msg?: string }>();
 <template>
   <div class="config-container">
     <h1 class="config-title">Env Configurator 插件配置</h1>
-    <!-- 消息提示 -->
-    <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
-    <div v-if="successMessage" class="success-message">{{ successMessage }}</div>
-
     <!-- 选项卡切换 -->
     <div class="tabs">
       <button
@@ -199,9 +203,8 @@ defineProps<{ msg?: string }>();
         <d-input
           v-model="domain"
           placeholder="请输入域名（例如：api.example.com）"
-          :disabled="!!errorMessage"
         />
-        <d-button type="primary" @click="addDomain" :disabled="!!errorMessage">添加</d-button>
+        <d-button type="primary" @click="addDomain" >添加</d-button>
       </div>
       <!-- 已配置域名列表 -->
       <div class="list-container">
@@ -223,9 +226,8 @@ defineProps<{ msg?: string }>();
         <d-input
           v-model="variablePath"
           placeholder="请输入变量路径（例如：window.service_cf3_config）"
-          :disabled="!!errorMessage"
         />
-        <d-button type="primary" @click="addVariable" :disabled="!!errorMessage">添加</d-button>
+        <d-button type="primary" @click="addVariable">添加</d-button>
       </div>
       <!-- 已配置变量列表 -->
       <div class="list-container">
@@ -249,8 +251,8 @@ defineProps<{ msg?: string }>();
           <div v-if="presets.length === 0" class="empty-state">暂无预设方案</div>
           <div v-for="item in presets" :key="item.id" class="domain-item">
             <div class="domain-name">{{ item.name }}</div>
-            <d-button type="primary" @click="" size="small">查看</d-button>
-            <d-button type="danger" @click="" size="small">删除</d-button>
+            <d-button type="primary" @click="viewPreset(item.id)" size="small">查看</d-button>
+            <d-button type="danger" @click="deletePreset(item.id)" size="small">删除</d-button>
           </div>
         </div>
       </div>

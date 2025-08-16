@@ -1,7 +1,7 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 import Index from '../components/Index.vue'
-import ConfigView from '../views/ConfigView.vue'
+import Config from '../components/Config.vue'
 
 export const routes: Array<RouteRecordRaw> = [
   {
@@ -12,7 +12,7 @@ export const routes: Array<RouteRecordRaw> = [
   {
     path: '/config',
     name: 'Config',
-    component: ConfigView
+    component: Config
   }
 ]
 
