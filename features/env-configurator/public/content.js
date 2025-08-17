@@ -69,6 +69,16 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     // 必须返回true以保持消息通道开放
     return true;
   }
+
+  if (request.action === "applyConfig") {
+    // 向override-script.js发送获取配置请求
+    window.postMessage({
+      action: "applyConfig",
+      config: request.config
+    }, "*");
+    return true;
+  }
+
 });
 
 // 初始化函数

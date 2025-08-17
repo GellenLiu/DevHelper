@@ -9,9 +9,54 @@
     <h1>Test Environment Configuration</h1>
     <p>This page sets the window.service_cf3_config object for testing purposes.</p>
 
+    <div id="variable-display">
+        <h2>当前环境变量值</h2>
+        <div class="variable-group">
+            <h3>window.env</h3>
+            <pre id="env-value"></pre>
+        </div>
+        <div class="variable-group">
+            <h3>window.service_cf3_config</h3>
+            <pre id="service-cf3-config-value"></pre>
+        </div>
+        <div class="variable-group">
+            <h3>window.platformConfig</h3>
+            <pre id="platform-config-value"></pre>
+        </div>
+    </div>
+
+    <style>
+        #variable-display {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+            max-width: 800px;
+        }
+        .variable-group {
+            margin-bottom: 15px;
+        }
+        h2 {
+            color: #333;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+        h3 {
+            color: #555;
+            margin-bottom: 5px;
+        }
+        pre {
+            background-color: #fff;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+
     <script>
+        // 设置测试用的变量
         window.env = 'hcs';
-        // 设置测试用的window.service_cf3_config对象
         window.service_cf3_config = {
             ss: 'test_value',
             apiUrl: 'https://api.example.com',
@@ -24,7 +69,59 @@
             test: {
                 env: 'hcs',
             }
+        };
+
+        // 显示变量值的函数
+        function displayVariables() {
+            document.getElementById('env-value').textContent = JSON.stringify(window.env, null, 2);
+            document.getElementById('service-cf3-config-value').textContent = JSON.stringify(window.service_cf3_config, null, 2);
+            document.getElementById('platform-config-value').textContent = JSON.stringify(window.platformConfig, null, 2);
         }
+
+        // 初始显示变量值
+        displayVariables();
+
+        // 存储变量的上一次值
+        let lastValues = {
+            env: window.env,
+            service_cf3_config: JSON.stringify(window.service_cf3_config),
+            platformConfig: JSON.stringify(window.platformConfig)
+        };
+
+        // 使用setInterval轮询检查变量变化
+        function startVariablePolling() {
+            setInterval(() => {
+                let hasChanged = false;
+
+                // 检查env变化
+                if (window.env !== lastValues.env) {
+                    lastValues.env = window.env;
+                    hasChanged = true;
+                }
+
+                // 检查service_cf3_config变化
+                const currentServiceConfig = JSON.stringify(window.service_cf3_config);
+                if (currentServiceConfig !== lastValues.service_cf3_config) {
+                    lastValues.service_cf3_config = currentServiceConfig;
+                    hasChanged = true;
+                }
+
+                // 检查platformConfig变化
+                const currentPlatformConfig = JSON.stringify(window.platformConfig);
+                if (currentPlatformConfig !== lastValues.platformConfig) {
+                    lastValues.platformConfig = currentPlatformConfig;
+                    hasChanged = true;
+                }
+
+                // 如果有变化，更新显示
+                if (hasChanged) {
+                    displayVariables();
+                }
+            }, 1000); // 每秒检查一次
+        }
+
+        // 启动轮询
+        startVariablePolling();
     </script>
 </body>
 </html>

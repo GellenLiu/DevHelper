@@ -25,6 +25,10 @@ async function getConfigsForObjects(objects) {
   return config;
 }
 
+function cacheConfig(config) {
+  window.sessionStorage.setItem("devHelper_envConfig", JSON.stringify(config));
+}
+
 window.addEventListener("message", async function (event) {
   if (event.source !== window) return;
 
@@ -41,4 +45,52 @@ window.addEventListener("message", async function (event) {
       "*"
     );
   }
+
+  if (event.data.action === "applyConfig") {
+    envConfig = event.data.config;
+    cacheConfig(envConfig);
+
+    window.location.reload();
+  }
 });
+
+function getObjectFromPath(path) {
+  const parts = path.split(".");
+  let current = window;
+
+  for (let i = 1; i < parts.length - 1; i++) {
+    if (current[parts[i]] === undefined) {
+      return null;
+    }
+    current = current[parts[i]];
+  }
+
+  return current;
+}
+
+function overrideConfig(config) {
+  Object.keys(config).forEach((key) => {
+    const current = getObjectFromPath(key);
+    const parts = key.split(".");
+    console.log("current", current, parts[parts.length - 1], config[key]);
+    Object.defineProperty(current, parts[parts.length - 1], {
+      get: () => {
+        return config[key];
+      },
+      set: (value) => {
+        envConfig[key] = value;
+      },
+      enumerable: true,
+      configurable: true,
+    });
+  });
+}
+
+function init() {
+  const config = window.sessionStorage.getItem("devHelper_envConfig");
+  if (config) {
+    overrideConfig(JSON.parse(config));
+  }
+}
+
+init();

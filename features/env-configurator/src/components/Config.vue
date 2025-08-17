@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, reactive } from 'vue';
 import { Message } from 'vue-devui';
 import { LocalStorageKey } from '../constant/common';
 
@@ -9,25 +9,12 @@ declare global {
     chrome?: {
       storage?: {
         local?: {
-          get: (keys: string[] | null, callback: (items: {[key: string]: any}) => void) => void;
-          set: (items: {[key: string]: any}, callback?: () => void) => void;
+          get: (keys: string[] | null, callback: (items: { [key: string]: any }) => void) => void;
+          set: (items: { [key: string]: any }, callback?: () => void) => void;
         }
       }
     }
   }
-}
-
-// 定义Chrome存储类型接口
-interface ChromeStorage {
-  [key: string]: string[] | PresetConfig[] | undefined;
-}
-
-// 预设配置接口
-interface PresetConfig {
-  id: string;
-  name: string;
-  domains: string[];
-  variables: string[];
 }
 
 // 定义响应式变量
@@ -35,8 +22,27 @@ const domain = ref('');
 const domains = ref<string[]>([]);
 const variablePath = ref('');
 const variables = ref<string[]>([]);
-const presets = ref<PresetConfig[]>([]);
-const currentView = ref('domains'); // 当前视图: domains, variables, presets
+const presets = ref<any[]>([]);
+const currentView = ref('variables'); // 当前视图: domains, variables, presets
+const toggleState = ref(false); // 插件开关状态
+const importModalVisible = ref(false); // 导入预设弹窗可见性
+const presetName = ref(''); // 预设名称
+const presetConfig = ref(''); // 预设配置JSON
+
+// 处理开关状态变化
+const handleSwitchChange = (value: boolean) => {
+  toggleState.value = value;
+  try {
+    const chrome = window.chrome;
+    if (chrome?.storage?.local) {
+      chrome.storage.local.set({
+        [LocalStorageKey.Switch]: value
+      });
+    }
+  } catch (e) {
+    Message.error('保存开关状态失败');
+  }
+}
 
 // 从Chrome存储加载配置
 function loadConfigs() {
@@ -46,16 +52,12 @@ function loadConfigs() {
       throw new Error('Chrome storage API is not available');
     }
 
-    chrome.storage.local.get([LocalStorageKey.Domains, LocalStorageKey.Variables, LocalStorageKey.Presets], function (result: ChromeStorage) {
-      if (result[LocalStorageKey.Domains as keyof ChromeStorage] && Array.isArray(result[LocalStorageKey.Domains as keyof ChromeStorage])) {
-        domains.value = result[LocalStorageKey.Domains as keyof ChromeStorage] as string[];
-      }
-      if (result[LocalStorageKey.Variables as keyof ChromeStorage] && Array.isArray(result[LocalStorageKey.Variables as keyof ChromeStorage])) {
-        variables.value = result[LocalStorageKey.Variables as keyof ChromeStorage] as string[];
-      }
-      if (result[LocalStorageKey.Presets as keyof ChromeStorage] && Array.isArray(result[LocalStorageKey.Presets as keyof ChromeStorage])) {
-        presets.value = result[LocalStorageKey.Presets as keyof ChromeStorage] as PresetConfig[];
-      }
+    chrome.storage.local.get([LocalStorageKey.Domains, LocalStorageKey.Variables, LocalStorageKey.Presets, LocalStorageKey.Switch], function (result: any) {
+      // 加载开关状态
+      toggleState.value = result[LocalStorageKey.Switch] ? JSON.parse(result[LocalStorageKey.Switch]) : false;
+      domains.value = result[LocalStorageKey.Domains] ? JSON.parse(result[LocalStorageKey.Domains]) : ['*'];
+      variables.value = result[LocalStorageKey.Variables] ? JSON.parse(result[LocalStorageKey.Variables]) : ['window.service_cf3_config'];
+      presets.value = result[LocalStorageKey.Presets] ? JSON.parse(result[LocalStorageKey.Presets]) : [];
     });
   } catch (e) {
     Message.error('加载配置失败');
@@ -82,15 +84,23 @@ function saveConfigs() {
   }
 }
 
+// 查看预设配置弹窗可见性
+const viewModalVisible = ref(false);
+// 当前查看的预设
+const currentPreset = ref<any>(null);
+
 // 查看预设配置
-function viewPreset(id: string) {
-  const preset = presets.value.find(p => p.id === id);
-  if (preset) {
-    // 可以在这里实现查看预设的逻辑，比如弹出详情对话框或切换到编辑视图
-    console.log('查看预设:', preset);
-    // 示例：显示预设详情
-    alert(`预设名称: ${preset.name}\n域名数量: ${preset.domains.length}\n变量数量: ${preset.variables.length}`);
-  }
+function viewPreset(name: string) {
+  const preset = presets.value.find(p => p.name === name);
+  console.log('preset', preset);
+  currentPreset.value = preset;
+  viewModalVisible.value = true;
+}
+
+// 处理查看预设取消
+function handleViewCancel() {
+  viewModalVisible.value = false;
+  currentPreset.value = null;
 }
 
 // 删除预设配置
@@ -162,6 +172,53 @@ function switchView(view: string) {
   currentView.value = view;
 }
 
+// 打开导入预设弹窗
+function openImportModal() {
+  importModalVisible.value = true;
+}
+
+// 处理导入预设提交
+function handleImportSubmit() {
+  if (!formData.presetName.trim()) {
+    Message.error('请输入预设名称');
+    return;
+  }
+
+  try {
+    // 解析JSON配置
+    const config = {
+      name: formData.presetName,
+      value: formData.presetConfig,
+    }
+
+    // 添加到预设列表
+    presets.value.push(config);
+    // 保存配置
+    saveConfigs();
+    importModalVisible.value = false;
+    Message.success('预设导入成功');
+    formData.presetName = '';
+    formData.presetConfig = '';
+
+  } catch (error) {
+    Message.error(`导入失败：${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
+// 处理导入预设取消
+function handleImportCancel() {
+  importModalVisible.value = false;
+  // 重置表单
+  presetName.value = '';
+  presetConfig.value = '';
+}
+
+const formData = reactive({
+  presetName: '',
+  presetConfig: '',
+});
+const rules = {
+};
 // 页面加载时加载配置
 onMounted(() => {
   loadConfigs();
@@ -174,24 +231,19 @@ defineProps<{ msg?: string }>();
 <template>
   <div class="config-container">
     <h1 class="config-title">Env Configurator 插件配置</h1>
+    <div class="switch-container">
+      <span class="switch-label">插件开关</span>
+      <d-switch v-model="toggleState" @change="handleSwitchChange" />
+    </div>
     <!-- 选项卡切换 -->
     <div class="tabs">
-      <button
-        :class="{ 'active': currentView === 'domains' }"
-        @click="switchView('domains')"
-      >
-        域名配置
-      </button>
-      <button
-        :class="{ 'active': currentView === 'variables' }"
-        @click="switchView('variables')"
-      >
+      <button :class="{ 'active': currentView === 'variables' }" @click="switchView('variables')">
         劫持变量配置
       </button>
-      <button
-        :class="{ 'active': currentView === 'presets' }"
-        @click="switchView('presets')"
-      >
+      <button :class="{ 'active': currentView === 'domains' }" @click="switchView('domains')">
+        域名配置
+      </button>
+      <button :class="{ 'active': currentView === 'presets' }" @click="switchView('presets')">
         预设配置导入
       </button>
     </div>
@@ -200,11 +252,8 @@ defineProps<{ msg?: string }>();
     <div v-if="currentView === 'domains'" class="config-section">
       <h2>域名配置</h2>
       <div class="input-group">
-        <d-input
-          v-model="domain"
-          placeholder="请输入域名（例如：api.example.com）"
-        />
-        <d-button type="primary" @click="addDomain" >添加</d-button>
+        <d-input v-model="domain" placeholder="请输入域名（例如：api.example.com）" />
+        <d-button type="primary" variant="solid" @click="addDomain">添加</d-button>
       </div>
       <!-- 已配置域名列表 -->
       <div class="list-container">
@@ -213,7 +262,7 @@ defineProps<{ msg?: string }>();
           <div v-if="domains.length === 0" class="empty-state">暂无配置的域名</div>
           <div v-for="item in domains" :key="item" class="domain-item">
             <div class="domain-name">{{ item }}</div>
-            <d-button type="danger" @click="removeDomain(item)" size="small">删除</d-button>
+            <d-button type="danger" color="danger" @click="removeDomain(item)" size="small">删除</d-button>
           </div>
         </div>
       </div>
@@ -223,11 +272,8 @@ defineProps<{ msg?: string }>();
     <div v-else-if="currentView === 'variables'" class="config-section">
       <h2>劫持变量配置</h2>
       <div class="input-group">
-        <d-input
-          v-model="variablePath"
-          placeholder="请输入变量路径（例如：window.service_cf3_config）"
-        />
-        <d-button type="primary" @click="addVariable">添加</d-button>
+        <d-input v-model="variablePath" placeholder="请输入变量路径（例如：window.service_cf3_config）" />
+        <d-button variant="solid" type="primary" @click="addVariable">添加</d-button>
       </div>
       <!-- 已配置变量列表 -->
       <div class="list-container">
@@ -236,7 +282,7 @@ defineProps<{ msg?: string }>();
           <div v-if="variables.length === 0" class="empty-state">暂无配置的变量</div>
           <div v-for="item in variables" :key="item" class="domain-item">
             <div class="domain-name">{{ item }}</div>
-            <d-button type="danger" @click="removeVariable(item)" size="small">删除</d-button>
+            <d-button type="danger" color="danger" @click="removeVariable(item)" size="small">删除</d-button>
           </div>
         </div>
       </div>
@@ -249,17 +295,62 @@ defineProps<{ msg?: string }>();
         <div class="list-header">预设配置</div>
         <div class="domain-list">
           <div v-if="presets.length === 0" class="empty-state">暂无预设方案</div>
-          <div v-for="item in presets" :key="item.id" class="domain-item">
+          <div v-for="item in presets" :key="item.name" class="domain-item">
             <div class="domain-name">{{ item.name }}</div>
-            <d-button type="primary" @click="viewPreset(item.id)" size="small">查看</d-button>
-            <d-button type="danger" @click="deletePreset(item.id)" size="small">删除</d-button>
+            <d-button type="primary" @click="viewPreset(item.name)" size="small">查看</d-button>
+            <d-button type="danger" color="danger" @click="deletePreset(item.name)" size="small">删除</d-button>
           </div>
         </div>
       </div>
       <div class="import-section">
-        <d-button type="primary">导入预设配置</d-button>
+        <d-button type="primary" variant="solid" @click="openImportModal">导入预设配置</d-button>
       </div>
     </div>
+    <!-- 导入预设配置弹窗 -->
+    <d-modal class="import-modal" style="width: 600px;" v-model="importModalVisible" title="导入预设配置" size="large"
+      @ok="handleImportSubmit" @cancel="handleImportCancel">
+      <div class="modal-content">
+        <div class="form-item">
+          <d-form layout="vertical" :data="formData" :rules="rules">
+            <d-form-item field="presetName" :rules="[{ required: true, message: '预设名称不能为空', trigger: 'blur' }]"
+              :show-feedback="false" label="预设名称">
+              <d-input v-model="formData.presetName" placeholder="请输入预设名称" />
+            </d-form-item>
+          </d-form>
+
+        </div>
+        <div class="form-item">
+          <label class="form-label">配置数据 (JSON格式)</label>
+          <d-textarea v-model="formData.presetConfig" placeholder="请输入JSON格式的配置数据" rows="10" />
+        </div>
+        <div>
+          <div class="modal-footer">
+            <d-button @click="handleImportCancel">取消</d-button>
+            <d-button variant="solid" @click="handleImportSubmit">确定</d-button>
+          </div>
+        </div>
+      </div>
+    </d-modal>
+
+    <!-- 查看预设配置弹窗 -->
+    <d-modal class="view-modal" style="width: 600px;" v-model="viewModalVisible" title="查看预设配置" size="large"
+      @cancel="handleViewCancel">
+      <div class="modal-content">
+        <div class="form-item">
+          <label class="form-label">预设名称</label>
+          <div class="form-value">{{ currentPreset?.name }}</div>
+        </div>
+        <div class="form-item">
+          <label class="form-label">配置数据</label>
+          <div class="form-value" style="height: 300px;overflow: scroll;">
+            {{ currentPreset?.value || '' }}
+          </div>
+        </div>
+        <div class="modal-footer">
+          <d-button @click="handleViewCancel">关闭</d-button>
+        </div>
+      </div>
+    </d-modal>
   </div>
 </template>
 
@@ -282,6 +373,41 @@ defineProps<{ msg?: string }>();
   margin-bottom: 20px;
   padding-bottom: 10px;
   border-bottom: 1px solid #e0e0e0;
+}
+
+.switch-container {
+  display: flex;
+  align-items: center;
+}
+
+.switch-label {
+  margin-right: 10px;
+  color: #666;
+  font-size: 18px;
+}
+
+.import-modal {
+  width: 600px !important;
+}
+
+.view-modal {
+  width: 600px !important;
+}
+
+.form-value {
+  padding: 8px 12px;
+  background-color: #f5f7fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  min-height: 32px;
+  word-break: break-all;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: center;
+  text-align: center;
+  gap: 10px;
 }
 
 .tabs {
@@ -412,6 +538,40 @@ defineProps<{ msg?: string }>();
 .import-section {
   margin-top: 20px;
   text-align: right;
+}
+
+/* 弹窗表单样式 */
+.modal-content {
+  padding: 20px;
+}
+
+.form-item {
+  margin-bottom: 24px;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #333;
+}
+
+.help-text {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #999;
+  white-space: pre-wrap;
+}
+
+/* 深色模式适配 */
+@media (prefers-color-scheme: dark) {
+  .form-label {
+    color: #f9fafb;
+  }
+
+  .help-text {
+    color: #9ca3af;
+  }
 }
 
 @keyframes fadeInOut {

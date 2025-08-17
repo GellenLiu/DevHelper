@@ -2,17 +2,169 @@
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router';
 import { LocalStorageKey } from '../constant/common';
+import { Message } from 'vue-devui';
+
+// 格式化输入值显示
+const formatValue = (value: any) => {
+    if (typeof value === 'string') {
+        // 字符串类型添加引号
+        return `'${value}'`;
+    } else if (Array.isArray(value) || (typeof value === 'object' && value !== null)) {
+        // 数组和对象类型序列化为JSON
+        return JSON.stringify(value, null, 2);
+    } else {
+        // 其他类型保持原样
+        return value;
+    }
+};
+
+// 处理输入变化
+const handleInputChange = (event: any, value: any, itemKey: string | number) => {
+    let inputValue = event;
+
+    console.log('inputValue', event, value[itemKey]);
+
+
+    try {
+        // 检查是否为带引号的字符串
+        if ((inputValue.startsWith('"') && inputValue.endsWith('"')) ||
+            (inputValue.startsWith('\'') && inputValue.endsWith('\''))) {
+            // 去除引号
+            value[itemKey] = inputValue.slice(1, -1);
+        }
+        // 检查是否为JSON对象或数组
+        else if ((inputValue.startsWith('{') && inputValue.endsWith('}')) ||
+            (inputValue.startsWith('[') && inputValue.endsWith(']'))) {
+            // 尝试解析JSON
+            value[itemKey] = JSON.parse(inputValue);
+        }
+        // 检查是否为数字
+        else if (!isNaN(inputValue) && inputValue.trim() !== '') {
+            value[itemKey] = Number(inputValue);
+        }
+        // 检查是否为布尔值
+        else if (inputValue.toLowerCase() === 'true') {
+            value[itemKey] = true;
+        }
+        else if (inputValue.toLowerCase() === 'false') {
+            value[itemKey] = false;
+        }
+        // 空值处理
+        else if (inputValue.trim() === '') {
+            value[itemKey] = '';
+        }
+        // 默认为字符串
+        else {
+            value[itemKey] = inputValue;
+        }
+    } catch (error) {
+        Message.error('输入解析失败，请检查格式');
+        console.error('解析输入失败:', error);
+    }
+};
+
+// 导入配置函数
+const handleImportClick = () => {
+    // 创建一个输入文件元素
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+
+    // 监听文件选择事件
+    input.onchange = (e: any) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+
+            // 读取文件内容
+            reader.onload = (event: any) => {
+                try {
+                    // 解析JSON内容
+                    const importedConfig = JSON.parse(event.target.result);
+                    // 更新配置列表
+                    configList.value = importedConfig;
+                    Message.success('配置导入成功');
+                } catch (error) {
+                    Message.error('配置导入失败：无效的JSON格式');
+                }
+            };
+
+            reader.readAsText(file);
+        }
+    };
+
+    // 触发文件选择对话框
+    input.click();
+};
+
+// 复制配置函数
+const handleCopyClick = () => {
+    // 将配置列表转换为格式化的JSON字符串
+    const configStr = JSON.stringify(configList.value, null, 2);
+
+    // 使用Clipboard API复制文本
+    navigator.clipboard.writeText(configStr)
+        .then(() => {
+            Message.success('已复制到剪贴板');
+
+        })
+        .catch((_) => {
+            Message.error('复制配置失败');
+        });
+};
+
 
 const configList: any = ref([])
 const defaultVariable = ["window.service_cf3_config"];
 const variables = ref<any>(defaultVariable);
+const configListPanelToggleMap = ref<any>({})
 
+const applyPreset = (preset: any) => {
+    variables.value = preset.variables;
+}
+
+
+// 发送消息给content.js
+const applyConfig = () => {
+    (window as any).chrome.tabs.query({ active: true, currentWindow: true }, (tabs: any[]) => {
+        // 获取当前标签页ID
+        const tabId = tabs[0].id;
+
+        // 向内容脚本发送消息
+        (window as any).chrome.tabs.sendMessage(tabId, {
+            action: 'applyConfig',
+            config: configList.value
+        }, (response: any) => {
+            // 处理错误
+            if ((window as any).chrome.runtime.lastError) {
+                console.error('Message sending error:', (window as any).chrome.runtime.lastError);
+                Message.error('配置应用失败');
+                return;
+            }
+
+            if (response) {
+                console.log('配置应用成功:', response);
+                Message.success('配置应用成功');
+            } else {
+                console.log('没有收到响应');
+            }
+        });
+    });
+}
 
 
 const toggleState = ref(true);
-const toggle = (value: boolean) => {
+const handleSwitchChange = (value: boolean) => {
     toggleState.value = value;
+    (window as any).chrome?.storage.local.set({
+        [LocalStorageKey.Switch]: value,
+    })
 };
+
+const togglePanel = (key: string | number) => {
+    configListPanelToggleMap.value[key] = !configListPanelToggleMap.value[key]
+}
+
 
 // 在组件中使用路由
 const router = useRouter();
@@ -34,48 +186,71 @@ const getVariables = async () => {
         if (result[LocalStorageKey.Variables]) {
             // 定义 variables ref 对象以解决找不到变量的问题
             variables.value = JSON.parse(result[LocalStorageKey.Variables]);
+
         }
     })
 }
+
+const getSwitchState = async () => {
+    (window as any).chrome?.storage.local.get([LocalStorageKey.Switch], (result: any) => {
+        if (result[LocalStorageKey.Switch]) {
+            // 定义 variables ref 对象以解决找不到变量的问题
+            toggleState.value = JSON.parse(result[LocalStorageKey.Switch]);
+        }
+    })
+}
+
+const preSettings = ref()
+const getPreSettings = async () => {
+    (window as any).chrome?.storage.local.get([LocalStorageKey.Presets], (result: any) => {
+        if (result[LocalStorageKey.Presets]) {
+            // 定义 variables ref 对象以解决找不到变量的问题
+            preSettings.value = JSON.parse(result[LocalStorageKey.Presets]);
+        }
+    })
+}
+
 
 const getConfig = () => {
     console.log('getConfig', variables.value)
     const objects = variables.value || [];
     console.log('objects', objects);
-    
+
     // 检查chrome对象是否可用
     if (!(window as any).chrome || !(window as any).chrome.runtime) {
         console.error('Chrome runtime is not available');
         return;
     }
-    
-    (window as any).chrome.tabs.query({active: true, currentWindow: true}, (tabs: any[]) => {
-         // 获取当前标签页ID
-         const tabId = tabs[0].id;
-         
-         // 向内容脚本发送消息
-         (window as any).chrome.tabs.sendMessage(tabId, {
-            action: "getEnvConfig", 
+
+    (window as any).chrome.tabs.query({ active: true, currentWindow: true }, (tabs: any[]) => {
+        // 获取当前标签页ID
+        const tabId = tabs[0].id;
+
+        // 向内容脚本发送消息
+        (window as any).chrome.tabs.sendMessage(tabId, {
+            action: "getEnvConfig",
             objects
-         }, (response: any) => {
+        }, (response: any) => {
             // 处理错误
             if ((window as any).chrome.runtime.lastError) {
                 console.error('Message sending error:', (window as any).chrome.runtime.lastError);
                 return;
             }
-            
+
             if (response) {
                 console.log('Received response:', response);
                 configList.value = response;
             } else {
                 console.log('No response received');
             }
-         });
+        });
     });
 }
 
 onMounted(async () => {
+    await getSwitchState();
     await getVariables();
+    await getPreSettings();
     getConfig()
 })
 
@@ -85,32 +260,47 @@ onMounted(async () => {
     <div class="container">
         <div class="header">
             <div class="first-button">
-                <d-button variant="solid">应用配置</d-button>
+                <div class="switch-wrapper">
+                    <d-switch v-model="toggleState" @change="handleSwitchChange" />
+
+                    <span>{{ toggleState ? '开启' : '关闭' }}</span>
+                </div>
+                <div>
+                    <d-button-group>
+                        <d-button variant="solid" @click="applyConfig">
+                            应用配置
+                        </d-button>
+                    </d-button-group>
+                </div>
             </div>
             <div class="button-wrapper">
-                <d-button>刷新配置</d-button>
-                <d-button @click="handleSettingClick">设置</d-button>
-
-                <d-dropdown style="width: 100px;">
-                    <d-button>更多</d-button>
+                <d-button size="sm" @click="getConfig">刷新配置</d-button>
+                <d-dropdown>
+                    <d-button size="sm" >导入配置</d-button>
                     <template #menu>
+                        <div class="menu-item" @click="handleImportClick">选择文件导入</div>
                         <ul class="list-menu">
-                            <li class="menu-item">导入配置</li>
-                            <li class="menu-item">复制配置</li>
+                            <li class="menu-item" v-for="(item, index) in preSettings" :key="index"
+                                @click="applyPreset(item)">
+                                使用预设配置 {{ item.name }}
+                            </li>
                         </ul>
                     </template>
                 </d-dropdown>
+                <d-button size="sm" @click="handleCopyClick">复制配置</d-button>
+                <d-button @click="handleSettingClick" size="sm">设置</d-button>
+
             </div>
         </div>
         <div class="content">
             <div class="object-list">
                 <div class="object-list-item" v-for="(value, key) in configList" :key="key">
-
-                    <d-panel @toggle="toggle" :is-collapsed="true" :has-left-padding="false">
+                    <d-panel @toggle="togglePanel(key)" :is-collapsed="true" :has-left-padding="false">
                         <d-panel-header>
                             <div class="config-title">
                                 <span>{{ key }}</span>
-                                <d-icon :style="{ transform: toggleState ? 'rotate(90deg)' : 'rotate(180deg)' }"
+                                <d-icon
+                                    :style="{ transform: configListPanelToggleMap[key] ? 'rotate(90deg)' : 'rotate(180deg)' }"
                                     name="icon-chevron-down-2"></d-icon>
                             </div>
                         </d-panel-header>
@@ -122,13 +312,28 @@ onMounted(async () => {
                                         </div>
                                     </div>
                                     <div class="config-list-item-right">
-                                        <d-input v-model="value[itemKey]" />
-
+                                        <d-input :value="formatValue(value[itemKey])"
+                                            @change="handleInputChange($event, value, itemKey)" />
+                                    </div>
+                                </div>
+                                <div v-if="value.length === 0">
+                                    <div class="no-config">
+                                        <div class="no-config-text">
+                                            暂无配置
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </d-panel-body>
                     </d-panel>
+                </div>
+                <div v-if="configList.length === 0">
+                    <div class="no-config">
+                        <div class="no-config-text">
+                            暂无配置
+                            <span class="devui-link" @click="handleSettingClick">前往设置</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -142,7 +347,7 @@ onMounted(async () => {
 
     .first-button {
         display: flex;
-        justify-content: flex-end;
+        justify-content: space-between;
         margin-bottom: 12px;
     }
 
@@ -180,7 +385,6 @@ onMounted(async () => {
         }
     }
 
-
     .config-list-item {
         display: flex;
         align-items: center;
@@ -197,6 +401,10 @@ onMounted(async () => {
 
         .config-list-item-right {
             flex: 1;
+
+            .devui-input:focus {
+                border-bottom: 1px solid #007aff !important;
+            }
 
             :deep(.devui-input__wrapper) {
                 border: none;
@@ -223,6 +431,15 @@ onMounted(async () => {
     width: 100px;
 }
 
+.switch-wrapper {
+    display: flex;
+    align-items: center;
+
+    .devui-switch {
+        margin-right: 4px;
+    }
+}
+
 .menu-item {
     display: flex;
     justify-content: space-between;
@@ -235,5 +452,9 @@ onMounted(async () => {
 .menu-item:hover {
     background-color: var(--devui-list-item-hover-bg, #f2f5fc);
     color: var(--devui-list-item-hover-text, #526ecc);
+}
+
+.no-config {
+    margin-top: 40px;
 }
 </style>
