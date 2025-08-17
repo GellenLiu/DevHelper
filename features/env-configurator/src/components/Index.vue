@@ -26,6 +26,9 @@ const handleInputChange = (event: any, value: any, itemKey: string | number) => 
         if ((inputValue.startsWith('"') && inputValue.endsWith('"')) ||
             (inputValue.startsWith('\'') && inputValue.endsWith('\''))) {
             // 去除引号
+            if (getObjectType(value) === 'object') {
+                value = inputValue.slice(1, -1);
+            }
             value[itemKey] = inputValue.slice(1, -1);
         }
         // 检查是否为JSON对象或数组
@@ -132,13 +135,12 @@ const applyConfig = () => {
         }, (response: any) => {
             // 处理错误
             if ((window as any).chrome.runtime.lastError) {
-                Message.error('配置应用失败');
                 return;
             }
 
             if (response) {
                 Message.success('配置应用成功');
-            } 
+            }
         });
     });
 }
@@ -151,11 +153,6 @@ const handleSwitchChange = (value: boolean) => {
         [LocalStorageKey.Switch]: value,
     })
 };
-
-const togglePanel = (key: string | number) => {
-    configListPanelToggleMap.value[key] = !configListPanelToggleMap.value[key]
-}
-
 
 // 在组件中使用路由
 const router = useRouter();
@@ -172,12 +169,16 @@ const handleSettingClick = () => {
 
 // 从chrome.storage.local获取配置的valiables
 const getVariables = async () => {
-    (window as any).chrome?.storage.local.get([LocalStorageKey.Variables], (result: any) => {
-        if (result[LocalStorageKey.Variables]) {
-            // 定义 variables ref 对象以解决找不到变量的问题
-            variables.value = JSON.parse(result[LocalStorageKey.Variables]);
-
-        }
+    return new Promise((resolve, reject) => {
+        (window as any).chrome?.storage.local.get([LocalStorageKey.Variables], (result: any) => {
+            if (result[LocalStorageKey.Variables]) {
+                // 定义 variables ref 对象以解决找不到变量的问题
+                variables.value = JSON.parse(result[LocalStorageKey.Variables]);
+                resolve(variables.value);
+            } else {
+                reject('获取变量失败');
+            }
+        })
     })
 }
 
@@ -224,6 +225,8 @@ const getConfig = () => {
             }
 
             if (response) {
+                console.log('response', response);
+
                 configList.value = response;
             } else {
                 Message.error('获取配置失败');
@@ -231,6 +234,12 @@ const getConfig = () => {
         });
     });
 }
+
+const getObjectType = (obj: any) => {
+    return typeof obj;
+
+}
+
 
 onMounted(async () => {
     await getSwitchState();
@@ -261,7 +270,7 @@ onMounted(async () => {
             <div class="button-wrapper">
                 <d-button size="sm" @click="getConfig">刷新配置</d-button>
                 <d-dropdown>
-                    <d-button size="sm" >导入配置</d-button>
+                    <d-button size="sm">导入配置</d-button>
                     <template #menu>
                         <div class="menu-item" @click="handleImportClick">选择文件导入</div>
                         <ul class="list-menu">
@@ -280,7 +289,7 @@ onMounted(async () => {
         <div class="content">
             <div class="object-list">
                 <div class="object-list-item" v-for="(value, key) in configList" :key="value[key]">
-                    <d-panel @toggle="togglePanel(key)" :is-collapsed="true" :has-left-padding="false">
+                    <d-panel :is-collapsed="true" :has-left-padding="false">
                         <d-panel-header>
                             <div class="config-title">
                                 <span>{{ key }}</span>
@@ -291,17 +300,32 @@ onMounted(async () => {
                         </d-panel-header>
                         <d-panel-body>
                             <div class="config-list">
-                                <div class="config-list-item" v-for="(_, itemKey) in value" :key="value[itemKey]">
-
-                                    <div class="config-list-item-left">
-                                        <div class="config-list-item-left-title" title="{{ itemKey }}">{{ itemKey }}
+                                <div v-if="getObjectType(value) !== 'object'">
+                                    <div class="config-list-item">
+                                        <div class="config-list-item-left">
+                                            <div class="config-list-item-left-title" title="{{ key }}">{{ key }}
+                                            </div>
+                                        </div>
+                                        <div class="config-list-item-right">
+                                            <d-input :value="formatValue(value)"
+                                                @change="handleInputChange($event, value, key)" />
                                         </div>
                                     </div>
-                                    <div class="config-list-item-right">
-                                        <d-input :value="formatValue(value[itemKey])"
-                                            @change="handleInputChange($event, value, itemKey)" />
+                                </div>
+                                <div v-if="getObjectType(value) === 'object'">
+                                    <div class="config-list-item" v-for="(_, itemKey) in value" :key="value[itemKey]">
+
+                                        <div class="config-list-item-left">
+                                            <div class="config-list-item-left-title" title="{{ itemKey }}">{{ itemKey }}
+                                            </div>
+                                        </div>
+                                        <div class="config-list-item-right">
+                                            <d-input :value="formatValue(value[itemKey])"
+                                                @change="handleInputChange($event, value, itemKey)" />
+                                        </div>
                                     </div>
                                 </div>
+
                                 <div v-if="value.length === 0">
                                     <div class="no-config">
                                         <div class="no-config-text">
@@ -331,6 +355,11 @@ onMounted(async () => {
     width: 100%;
     height: 100%;
     padding: 12px;
+
+    .content {
+        max-height: 500px;
+        overflow: auto;
+    }
 
     .first-button {
         display: flex;
@@ -389,7 +418,7 @@ onMounted(async () => {
         .config-list-item-right {
             flex: 1;
 
-            .devui-input:focus {
+            .devui-input--focus {
                 border-bottom: 1px solid #007aff !important;
             }
 
