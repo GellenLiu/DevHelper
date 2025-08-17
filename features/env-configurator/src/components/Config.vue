@@ -92,7 +92,6 @@ const currentPreset = ref<any>(null);
 // 查看预设配置
 function viewPreset(name: string) {
   const preset = presets.value.find(p => p.name === name);
-  console.log('preset', preset);
   currentPreset.value = preset;
   viewModalVisible.value = true;
 }

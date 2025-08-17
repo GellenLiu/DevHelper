@@ -21,10 +21,6 @@ const formatValue = (value: any) => {
 // 处理输入变化
 const handleInputChange = (event: any, value: any, itemKey: string | number) => {
     let inputValue = event;
-
-    console.log('inputValue', event, value[itemKey]);
-
-
     try {
         // 检查是否为带引号的字符串
         if ((inputValue.startsWith('"') && inputValue.endsWith('"')) ||
@@ -59,7 +55,6 @@ const handleInputChange = (event: any, value: any, itemKey: string | number) => 
         }
     } catch (error) {
         Message.error('输入解析失败，请检查格式');
-        console.error('解析输入失败:', error);
     }
 };
 
@@ -137,17 +132,13 @@ const applyConfig = () => {
         }, (response: any) => {
             // 处理错误
             if ((window as any).chrome.runtime.lastError) {
-                console.error('Message sending error:', (window as any).chrome.runtime.lastError);
                 Message.error('配置应用失败');
                 return;
             }
 
             if (response) {
-                console.log('配置应用成功:', response);
                 Message.success('配置应用成功');
-            } else {
-                console.log('没有收到响应');
-            }
+            } 
         });
     });
 }
@@ -174,7 +165,6 @@ const handleSettingClick = () => {
         const configUrl = (window as any).chrome?.runtime?.getURL('index.html#/config');
         window.open(configUrl, '_blank');
     } else {
-        console.error('Chrome runtime is not available');
         // 降级方案：使用普通路由跳转
         router.push('/config');
     }
@@ -212,13 +202,10 @@ const getPreSettings = async () => {
 
 
 const getConfig = () => {
-    console.log('getConfig', variables.value)
     const objects = variables.value || [];
-    console.log('objects', objects);
 
     // 检查chrome对象是否可用
     if (!(window as any).chrome || !(window as any).chrome.runtime) {
-        console.error('Chrome runtime is not available');
         return;
     }
 
@@ -233,15 +220,13 @@ const getConfig = () => {
         }, (response: any) => {
             // 处理错误
             if ((window as any).chrome.runtime.lastError) {
-                console.error('Message sending error:', (window as any).chrome.runtime.lastError);
                 return;
             }
 
             if (response) {
-                console.log('Received response:', response);
                 configList.value = response;
             } else {
-                console.log('No response received');
+                Message.error('获取配置失败');
             }
         });
     });
@@ -294,7 +279,7 @@ onMounted(async () => {
         </div>
         <div class="content">
             <div class="object-list">
-                <div class="object-list-item" v-for="(value, key) in configList" :key="key">
+                <div class="object-list-item" v-for="(value, key) in configList" :key="value[key]">
                     <d-panel @toggle="togglePanel(key)" :is-collapsed="true" :has-left-padding="false">
                         <d-panel-header>
                             <div class="config-title">
@@ -306,7 +291,8 @@ onMounted(async () => {
                         </d-panel-header>
                         <d-panel-body>
                             <div class="config-list">
-                                <div class="config-list-item" v-for="(_, itemKey) in value" :key="itemKey">
+                                <div class="config-list-item" v-for="(_, itemKey) in value" :key="value[itemKey]">
+
                                     <div class="config-list-item-left">
                                         <div class="config-list-item-left-title" title="{{ itemKey }}">{{ itemKey }}
                                         </div>
@@ -344,6 +330,7 @@ onMounted(async () => {
 .container {
     width: 100%;
     height: 100%;
+    padding: 12px;
 
     .first-button {
         display: flex;
@@ -456,5 +443,6 @@ onMounted(async () => {
 
 .no-config {
     margin-top: 40px;
+    margin-bottom: 40px;
 }
 </style>
