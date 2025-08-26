@@ -1,0 +1,21 @@
+{
+  "name": "devui-dev-helper",
+  "private": true,
+  "version": "1.0.0",
+  "description": "A powerful browser extension for developers with multiple helpful tools",
+  "scripts": {
+    "build": "vite build",
+    "build:all": "npm run build:env-configurator && vite build",
+    "build:env-configurator": "cd features/env-configurator && npm install && npm run build",
+    "dev": "vite"
+  },
+  "keywords": ["browser-extension", "developer-tools", "devui"],
+  "author": "DevUI Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0"
+  }
+}

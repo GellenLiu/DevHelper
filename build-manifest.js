@@ -1,8 +1,15 @@
 const fs = require('fs');
 const path = require('path');
 
-// 读取主 manifest.json 文件
-const mainManifestPath = path.join(__dirname, 'manifest.json');
+// 读取主 manifest.json 文件 - 支持从环境变量获取输出路径
+const defaultManifestPath = path.join(__dirname, 'manifest.json');
+const outputManifestPath = process.env.MANIFEST_OUTPUT_PATH || defaultManifestPath;
+const mainManifestPath = process.env.MANIFEST_OUTPUT_PATH ? 
+  // 如果指定了输出路径，读取原始manifest
+  defaultManifestPath : 
+  // 否则使用默认路径
+  defaultManifestPath;
+
 let mainManifest = JSON.parse(fs.readFileSync(mainManifestPath, 'utf8'));
 
 // 备份原始配置
@@ -121,7 +128,8 @@ if (mainManifest.web_accessible_resources && Array.isArray(mainManifest.web_acce
 
 // 写入更新后的主 manifest.json 文件
 console.log(`Updating main manifest with ${mainManifest.content_scripts.length} content scripts and ${mainManifest.web_accessible_resources.length} web accessible resources`);
-fs.writeFileSync(mainManifestPath, JSON.stringify(mainManifest, null, 2), 'utf8');
+console.log(`Writing manifest to: ${outputManifestPath}`);
+fs.writeFileSync(outputManifestPath, JSON.stringify(mainManifest, null, 2), 'utf8');
 console.log('Main manifest.json has been updated with features configurations.');
 
 // 显示更新后的配置

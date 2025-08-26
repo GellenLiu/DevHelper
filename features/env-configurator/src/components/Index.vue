@@ -159,8 +159,10 @@ const router = useRouter();
 const handleSettingClick = () => {
     // 在新窗口中打开配置页面
     if (window.chrome && (window as any).chrome.runtime) {
-        const configUrl = (window as any).chrome?.runtime?.getURL('index.html#/config');
-        window.open(configUrl, '_blank');
+        const roterdata = router.resolve({
+            path: '/config',
+        })
+        window.open(roterdata.href, '_blank');
     } else {
         // 降级方案：使用普通路由跳转
         router.push('/config');

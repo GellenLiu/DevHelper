@@ -31,7 +31,8 @@
         "<all_urls>"
       ],
       "js": [
-        "features/js-error-monitor/content.js"
+        "features/js-error-monitor/content.js",
+        "features/env-configurator/content.js"
       ],
       "run_at": "document_start"
     }
@@ -40,6 +41,7 @@
     {
       "resources": [
         "features/js-error-monitor/error-script.js",
+        "features/env-configurator/override-script.js",
         "utils/json-loader.js",
         "feature.config.js"
       ],
