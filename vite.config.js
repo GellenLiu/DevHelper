@@ -146,9 +146,8 @@ export default defineConfig({
     emptyOutDir: true,
     rollupOptions: {
       input: {
-        // 这里可以根据需要指定入口文件
-        // popup: resolve(__dirname, 'src/popup/popup.html'),
-        // management: resolve(__dirname, 'src/management/feature-management.html')
+        // 指定background.js作为入口文件
+        background: resolve(__dirname, 'src/background.js')
       },
       output: {
         // 保持目录结构

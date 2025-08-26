@@ -40,6 +40,7 @@
     "createdAt": "2025-08-15",
     "category": "development",
     "height": 500,
-    "width": 350
+    "width": 350,
+    "showHeader": false
   }
 }

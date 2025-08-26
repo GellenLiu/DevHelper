@@ -5,7 +5,7 @@ function injectScript() {
   const script = document.createElement("script");
   script.id = "devhelper-override-script";
   script.src = chrome.runtime.getURL(
-    "./override-script.js"
+    "/features/env-configurator/override-script.js"
   );
   script.type = "text/javascript";
   document.head.appendChild(script);
@@ -55,6 +55,7 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     // 设置临时监听器等待override-script.js的响应
     const handleResponse = function(event) {
       if (event.source !== window || event.data.action !== "returnEnvConfig") return;
+      console.log('监听到配置', event.data.config)
 
       // 移除监听器
       window.removeEventListener("message", handleResponse);

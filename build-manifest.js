@@ -133,5 +133,15 @@ fs.writeFileSync(outputManifestPath, JSON.stringify(mainManifest, null, 2), 'utf
 console.log('Main manifest.json has been updated with features configurations.');
 
 // 显示更新后的配置
+// 处理background.js路径 - 从src/background.js改为background.js
+// 这是因为Vite构建后文件会直接放在output目录下
+if (mainManifest.background && mainManifest.background.service_worker) {
+  if (mainManifest.background.service_worker.startsWith('src/')) {
+    mainManifest.background.service_worker = mainManifest.background.service_worker.replace('src/', '');
+    console.log(`Updated background service worker path to: ${mainManifest.background.service_worker}`);
+  }
+}
+
 console.log('Updated content_scripts:', JSON.stringify(mainManifest.content_scripts, null, 2));
 console.log('Updated web_accessible_resources:', JSON.stringify(mainManifest.web_accessible_resources, null, 2));
+console.log('Updated background:', JSON.stringify(mainManifest.background, null, 2));

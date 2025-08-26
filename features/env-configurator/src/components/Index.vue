@@ -175,7 +175,7 @@ const getVariables = async () => {
         (window as any).chrome?.storage.local.get([LocalStorageKey.Variables], (result: any) => {
             if (result[LocalStorageKey.Variables]) {
                 // 定义 variables ref 对象以解决找不到变量的问题
-                variables.value = JSON.parse(result[LocalStorageKey.Variables]);
+                variables.value = result[LocalStorageKey.Variables] ? JSON.parse(result[LocalStorageKey.Variables]) : ['window.service_cf3_config'];
                 resolve(variables.value);
             } else {
                 reject('获取变量失败');
@@ -188,7 +188,7 @@ const getSwitchState = async () => {
     (window as any).chrome?.storage.local.get([LocalStorageKey.Switch], (result: any) => {
         if (result[LocalStorageKey.Switch]) {
             // 定义 variables ref 对象以解决找不到变量的问题
-            toggleState.value = JSON.parse(result[LocalStorageKey.Switch]);
+            toggleState.value = result[LocalStorageKey.Switch] ? JSON.parse(result[LocalStorageKey.Switch]) : false;
         }
     })
 }
@@ -198,7 +198,7 @@ const getPreSettings = async () => {
     (window as any).chrome?.storage.local.get([LocalStorageKey.Presets], (result: any) => {
         if (result[LocalStorageKey.Presets]) {
             // 定义 variables ref 对象以解决找不到变量的问题
-            preSettings.value = JSON.parse(result[LocalStorageKey.Presets]);
+            preSettings.value = result[LocalStorageKey.Presets] ? JSON.parse(result[LocalStorageKey.Presets]) : [];
         }
     })
 }
@@ -322,7 +322,7 @@ onMounted(async () => {
                                             </div>
                                         </div>
                                         <div class="config-list-item-right">
-                                            <d-input :value="formatValue(value[itemKey])"
+                                            <d-input :size="'sm'" :value="formatValue(value[itemKey])"
                                                 @change="handleInputChange($event, value, itemKey)" />
                                         </div>
                                     </div>
@@ -394,7 +394,7 @@ onMounted(async () => {
         display: flex;
         align-items: center;
         font-size: 14px;
-        font-weight: 500;
+        font-weight: 700;
         margin-bottom: 8px;
         text-align: left;
 
@@ -406,7 +406,7 @@ onMounted(async () => {
     .config-list-item {
         display: flex;
         align-items: center;
-        margin-bottom: 12px;
+        margin-bottom: 8px;
 
         .config-list-item-left {
             width: 100px;
