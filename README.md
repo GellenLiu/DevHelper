@@ -1,11 +1,9 @@
 
 <div align="center">
-  <img src="icons/icon128.png" alt="DevUI Dev Helper Logo" />
+  <img src="icons/icon128.png" alt="Dev Helper Logo" />
 </div>
 
-
 # Dev Helper - 开发者工具扩展
-
 
 一个强大的前端开发提效工具，通过DevUI扩展增强您的开发工作流程。
 
@@ -28,8 +26,8 @@
 > 实时监控网页JS错误并提示，避免在未打开控制台时漏掉重要错误。在错误上报的第一时间处理问题，而不是在埋点平台后续追踪。
 - 实时JavaScript错误跟踪
 - 可配置的错误类型过滤 (SyntaxError, ReferenceError, etc.)
-- 自定义错误消息过滤
-- 错误通知管理
+- 支持自定义错误消息内容过滤
+- 支持监控域名配置
 
 <div align="center">
   <img src="features/js-error-monitor/assets/demo.png" alt="js-error-monitor 效果图">
@@ -64,8 +62,9 @@
 ### 开发模式安装
 1. Clone this repository 或下载 release压缩包
 ```bash
-git clone https://gitcode.com/liuguolin/DevUIDevHelper.git
-cd DevUIDevHelper
+git clone https://gitcode.com/liuguolin/DevHelper.git
+cd DevHelper
+npm run build:all
 ```
 
 2. 在Chrome中加载扩展:
@@ -81,22 +80,15 @@ cd DevUIDevHelper
 4. 点击功能名称可配置各个功能的详细设置
 5. 所有设置会自动保存
 
-## 截图展示
-
-### 主界面
-![Main Interface](assets/menus.png)
-
-
-### JS Error Monitor 功能配置页面
-![Error Monitor Configuration](features/js-error-monitor/assets/config.png)
-
-
 ## 开发指南
 
 ### 前置要求
 - Chrome浏览器
+- Node.js v22.12.0
 
 ## 贡献指南
+
+按照常规浏览器插件开发，放置在`features`目录下，并在`manifest.json`中配置相关权限及其资源。
 
 欢迎贡献代码！请随时提交Pull Request。
 
@@ -117,5 +109,5 @@ cd DevUIDevHelper
 
 ## Contact
 
-- Project Link: [https://gitcode.com/liuguolin/DevUIDevHelper.git](https://gitcode.com/liuguolin/DevUIDevHelper.git)
-- Issues: [https://gitcode.com/liuguolin/DevUIDevHelper.git/issues](https://gitcode.com/liuguolin/DevUIDevHelper.git/issues)
+- Project Link: [https://gitcode.com/liuguolin/DevHelper.git](https://gitcode.com/liuguolin/DevHelper.git)
+- Issues: [https://gitcode.com/liuguolin/DevHelper.git/issues](https://gitcode.com/liuguolin/DevHelper.git/issues)

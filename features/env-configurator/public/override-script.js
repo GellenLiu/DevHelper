@@ -1,4 +1,6 @@
 let envConfig = {};
+const TEMP_CONFIG_KEY = "devHelper_envConfig";
+const overriderSwitch = false;
 
 // 根据配置的对象路径获取配置
 async function getConfigsForObjects(objects) {
@@ -26,16 +28,19 @@ async function getConfigsForObjects(objects) {
 }
 
 function cacheConfig(config) {
-  window.sessionStorage.setItem("devHelper_envConfig", JSON.stringify(config));
+  window.sessionStorage.setItem(TEMP_CONFIG_KEY, JSON.stringify(config));
 }
 
 window.addEventListener("message", async function (event) {
   if (event.source !== window) return;
 
-  // 接收来自content.js的配置
-  if (event.data.action === "getEnvConfig") {
-    const config = await getConfigsForObjects(event.data.objects);
+  const handler = messageHandlers[event.data.action];
+  handler && handler(event);
+});
 
+const messageHandlers = {
+  getEnvConfig: async (event) => {
+    const config = await getConfigsForObjects(event.data.objects);
     // 向content.js发送配置
     window.postMessage(
       {
@@ -44,15 +49,13 @@ window.addEventListener("message", async function (event) {
       },
       "*"
     );
-  }
-
-  if (event.data.action === "applyConfig") {
+  },
+  applyConfig: (event) => {
     envConfig = event.data.config;
     cacheConfig(envConfig);
-
     window.location.reload();
-  }
-});
+  },
+};
 
 function getObjectFromPath(path) {
   const parts = path.split(".");
@@ -72,7 +75,6 @@ function overrideConfig(config) {
   Object.keys(config).forEach((key) => {
     const current = getObjectFromPath(key);
     const parts = key.split(".");
-    console.log("current", current, parts[parts.length - 1], config[key]);
     Object.defineProperty(current, parts[parts.length - 1], {
       get: () => {
         return config[key];
@@ -86,11 +88,30 @@ function overrideConfig(config) {
   });
 }
 
-function init() {
-  const config = window.sessionStorage.getItem("devHelper_envConfig");
-  if (config) {
-    overrideConfig(JSON.parse(config));
-  }
+async function getContentInfo() {
+  return new Promise((resolve, reject) => {
+    window.addEventListener("message", function (event) {
+      if (event.source !== window) return;
+      if (event.data.action === "RETURN_CONTENT_INFO") {
+        resolve(event.data);
+      }
+    });
+    window.postMessage(
+      {
+        action: "GET_CONTENT_INFO",
+      },
+      "*"
+    );
+  });
 }
 
-init();
+async function initOverride() {
+  let contentInfo = await getContentInfo();
+  if (contentInfo.switch) {
+    const config = window.sessionStorage.getItem(TEMP_CONFIG_KEY);
+    if (config) {
+      overrideConfig(JSON.parse(config));
+    }
+  }
+}
+initOverride();

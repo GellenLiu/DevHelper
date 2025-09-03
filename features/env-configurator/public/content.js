@@ -26,14 +26,13 @@ window.addEventListener("message", function (event) {
     }
   }
 
-  // 处理获取环境配置变量请求
-  if (event.data.type === "GET_ENV_CONFIGURATOR_VARIABLES") {
+  if (event.data.action === 'GET_CONTENT_INFO') {
     // 从chrome.storage.local获取配置变量
-    chrome.storage.local.get(["envConfiguratorVariables"], function(result) {
+    chrome.storage.local.get(["envConfiguratorSwitch"], function(result) {
       // 发送响应回override-script.js
       window.postMessage({
-        type: "ENV_CONFIGURATOR_VARIABLES",
-        variables: result.envConfiguratorVariables
+        action: "RETURN_CONTENT_INFO",
+        switch: result.envConfiguratorSwitch
       }, "*");
     });
   }
@@ -42,8 +41,6 @@ window.addEventListener("message", function (event) {
 // 监听来自chrome.runtime的消息
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
   // 处理获取环境配置请求
-  console.log('request', request)
-
   if (request.action === "getEnvConfig") {
     // 向override-script.js发送获取配置请求
     window.postMessage({
@@ -55,8 +52,6 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     // 设置临时监听器等待override-script.js的响应
     const handleResponse = function(event) {
       if (event.source !== window || event.data.action !== "returnEnvConfig") return;
-      console.log('监听到配置', event.data.config)
-
       // 移除监听器
       window.removeEventListener("message", handleResponse);
 
@@ -84,8 +79,7 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 
 // 初始化函数
 async function init() {
-  console.log('content init', await isActive())
-  const active = await isActive();
+  const active = await isDomainActive();
   if (active) {
     injectScript();
   }
@@ -93,13 +87,36 @@ async function init() {
 
 init();
 
-// 从chrome.storage.local获取插件开关状态
-function isActive() {
+async function isDomainActive() {
   return new Promise((resolve) => {
     if (chrome && chrome.storage && chrome.storage.local) {
-      chrome.storage.local.get(['isEnvConfiguratorActive'], function(result) {
-        // 如果isEnvConfiguratorActive未设置，默认为true
-        const active = result.isEnvConfiguratorActive !== undefined ? result.isEnvConfiguratorActive : true;
+      chrome.storage.local.get(['envConfiguratorDomains'], function(result) {
+        let currentDomain = window.location.href;
+        const domains = JSON.parse(result.envConfiguratorDomains || '["*"]');
+         let active = domains.some(pattern => {
+            if (!pattern) return false;
+            
+            // * 匹配所有域名
+            if (pattern === '*') {
+                return true;
+            }
+
+            if (currentDomain.includes(pattern)) {
+                return true;
+            }
+            
+            // 将通配符和正则表达式转换为有效的RegExp
+            try {
+                const regexPattern = pattern
+                    .replace(/[\[\]\\\/.+?^${}()|]/g, '\\$&') // 转义正则特殊字符
+                    .replace(/\*/g, '.*'); // 将*转换为.*
+                const regex = new RegExp(`${regexPattern}`, 'i');
+                return regex.test(currentDomain);
+            } catch (error) {
+                console.error(`Failed to create regex from pattern: ${pattern}. Error: ${error.message}`);
+                return false;
+            }
+        });
         resolve(active);
       });
     } else {

@@ -26,7 +26,7 @@ const handleInputChange = (event: any, value: any, itemKey: string | number) => 
         if ((inputValue.startsWith('"') && inputValue.endsWith('"')) ||
             (inputValue.startsWith('\'') && inputValue.endsWith('\''))) {
             // 去除引号
-            if (getObjectType(value) === 'object') {
+            if (getObjectType(inputValue) === 'object') {
                 value = inputValue.slice(1, -1);
             }
             value[itemKey] = inputValue.slice(1, -1);
@@ -118,7 +118,11 @@ const variables = ref<any>(defaultVariable);
 const configListPanelToggleMap = ref<any>({})
 
 const applyPreset = (preset: any) => {
-    variables.value = preset.variables;
+    try {
+        configList.value = JSON.parse(preset.value);
+    } catch (error) {
+        Message.error('配置导入失败：无效的JSON格式');
+    }
 }
 
 
@@ -186,10 +190,7 @@ const getVariables = async () => {
 
 const getSwitchState = async () => {
     (window as any).chrome?.storage.local.get([LocalStorageKey.Switch], (result: any) => {
-        if (result[LocalStorageKey.Switch]) {
-            // 定义 variables ref 对象以解决找不到变量的问题
-            toggleState.value = result[LocalStorageKey.Switch] ? JSON.parse(result[LocalStorageKey.Switch]) : false;
-        }
+        toggleState.value = result[LocalStorageKey.Switch] ? JSON.parse(result[LocalStorageKey.Switch]) : false;
     })
 }
 
@@ -227,8 +228,6 @@ const getConfig = () => {
             }
 
             if (response) {
-                console.log('response', response);
-
                 configList.value = response;
             } else {
                 Message.error('获取配置失败');
@@ -263,7 +262,7 @@ onMounted(async () => {
                 </div>
                 <div>
                     <d-button-group>
-                        <d-button variant="solid" @click="applyConfig">
+                        <d-button :title="!toggleState ? '请先开启开关' : ''" variant="solid" @click="applyConfig" :disabled="!toggleState">
                             应用配置
                         </d-button>
                     </d-button-group>
@@ -305,12 +304,12 @@ onMounted(async () => {
                                 <div v-if="getObjectType(value) !== 'object'">
                                     <div class="config-list-item">
                                         <div class="config-list-item-left">
-                                            <div class="config-list-item-left-title" title="{{ key }}">{{ key }}
+                                            <div class="config-list-item-left-title" :title="String(key)">{{ String(key) }}
                                             </div>
                                         </div>
-                                        <div class="config-list-item-right">
-                                            <d-input :value="formatValue(value)"
-                                                @change="handleInputChange($event, value, key)" />
+                                        <div class="config-list-item-right" :key="configList[key]">
+                                            <d-input :size="'sm'" :value="formatValue(configList[key])"
+                                                @change="handleInputChange($event, configList, key)" />
                                         </div>
                                     </div>
                                 </div>
@@ -318,7 +317,7 @@ onMounted(async () => {
                                     <div class="config-list-item" v-for="(_, itemKey) in value" :key="value[itemKey]">
 
                                         <div class="config-list-item-left">
-                                            <div class="config-list-item-left-title" title="{{ itemKey }}">{{ itemKey }}
+                                            <div class="config-list-item-left-title" :title="String(itemKey)">{{ String(itemKey) }}
                                             </div>
                                         </div>
                                         <div class="config-list-item-right">
@@ -359,7 +358,6 @@ onMounted(async () => {
     padding: 12px;
 
     .content {
-        max-height: 500px;
         overflow: auto;
     }
 

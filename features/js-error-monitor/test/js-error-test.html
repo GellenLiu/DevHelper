@@ -165,8 +165,6 @@
 
         // 变量和类型错误
         function triggerUndefinedVariable() {
-            // 访问未定义的变量
-            console.log(undefinedVariable);
         }
 
         function triggerTypeError() {
@@ -178,7 +176,6 @@
         function triggerReferenceError() {
             // 访问对象不存在的属性
             const obj = {};
-            console.log(obj.nonExistentProperty.nestedProperty);
         }
 
         function triggerRangeError() {
