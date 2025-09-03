@@ -103,11 +103,10 @@ function handleViewCancel() {
 }
 
 // 删除预设配置
-function deletePreset(id: string) {
+function deletePreset(name: string) {
   if (confirm('确定要删除这个预设吗？')) {
-    presets.value = presets.value.filter(p => p.id !== id);
+    presets.value = presets.value.filter(p => p.name !== name);
     saveConfigs();
-    Message.success('预设已删除');
   }
 }
 
@@ -320,7 +319,7 @@ defineProps<{ msg?: string }>();
         </div>
         <div class="form-item">
           <label class="form-label">配置数据 (JSON格式)</label>
-          <d-textarea v-model="formData.presetConfig" placeholder="请输入JSON格式的配置数据" rows="10" />
+          <d-textarea v-model="formData.presetConfig" placeholder="请输入JSON格式的配置数据, 可通过复制配置获取" rows="10" />
         </div>
         <div>
           <div class="modal-footer">

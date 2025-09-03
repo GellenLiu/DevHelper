@@ -341,7 +341,7 @@ onMounted(async () => {
                 <div v-if="configList.length === 0">
                     <div class="no-config">
                         <div class="no-config-text">
-                            暂无配置
+                            暂无变量配置或未配置域名
                             <span class="devui-link" @click="handleSettingClick">前往设置</span>
                         </div>
                     </div>
