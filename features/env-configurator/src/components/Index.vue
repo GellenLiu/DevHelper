@@ -3,6 +3,7 @@ import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router';
 import { LocalStorageKey } from '../constant/common';
 import { Message } from 'vue-devui';
+import SearchPlugin from './SearchPlugin.vue';
 
 // 格式化输入值显示
 const formatValue = (value: any) => {
@@ -348,6 +349,7 @@ onMounted(async () => {
                 </div>
             </div>
         </div>
+        <SearchPlugin search-target-selector=".container" />
     </div>
 </template>
 
@@ -356,6 +358,7 @@ onMounted(async () => {
     width: 100%;
     height: 100%;
     padding: 12px;
+    padding-bottom: 40px;
 
     .content {
         overflow: auto;
