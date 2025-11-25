@@ -109,6 +109,16 @@ window.addEventListener('message', async (event) => {
         } else {
           // 没有匹配的规则或其他错误，让原始请求继续
           console.log('[Content Script] No rule matched or error for ID:', data.id, ', letting original request continue');
+          // 请求当前规则列表以便调试和定位匹配问题
+          try {
+            chrome.runtime.sendMessage({ type: 'GET_RULES' }, (resp) => {
+              if (resp && resp.rules) {
+                console.info('[Content Script] Current rules for debugging:', resp.rules.map(r => ({ id: r.id, name: r.name, enabled: r.enabled, sourcePattern: r.sourcePattern })).slice(0, 10));
+              }
+            });
+          } catch (e) {
+            console.error('[Content Script] Failed to fetch rules for debugging:', e);
+          }
           window.postMessage({
             type: 'FORWARD_RESPONSE',
             data: {

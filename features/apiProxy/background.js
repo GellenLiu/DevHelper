@@ -484,8 +484,10 @@ async function handleInterceptRequest(data, tabUrl, sendResponse) {
     const rule = ruleManager.matchRule(data.url, data.method);
 
     if (!rule) {
-      // 没有匹配的规则，记录日志但不转发
-      console.log('[Background] No rule matched for:', data.url);
+      // 没有匹配的规则，记录日志但不转发 -- 诊断信息（仅显示前 5 条规则）
+      const allRules = await ruleManager.getRules();
+      const ruleSnippets = (allRules || []).slice(0, 5).map(r => `${r.enabled ? '[ENABLED]' : '[DISABLED]'} ${r.name || ''} -> ${r.sourcePattern}`).join('; ');
+      console.log(`[Background] No rule matched for: ${data.url}. Rules count: ${allRules.length}. Examples: ${ruleSnippets}`);
       await logger.addRequestLog({
         url: data.url,
         method: data.method,
