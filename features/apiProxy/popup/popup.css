@@ -758,6 +758,15 @@ body {
     overflow: hidden;
 }
 
+.log-editor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 18px;
+    background: #252526;
+    border-bottom: 1px solid #3e3e42;
+}
+
 /* 日志表头 */
 .logs-header {
     display: grid;

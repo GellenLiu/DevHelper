@@ -812,17 +812,6 @@ function renderLogsList(logsToRender) {
     return;
   }
 
-  // 添加日志表头
-  const logsHeader = document.createElement("div");
-  logsHeader.className = "logs-header";
-  logsHeader.innerHTML = `
-        <div>TIME</div>
-        <div>STATUS</div>
-        <div>METHOD</div>
-        <div>ORIGINAL URL</div>
-    `;
-  elements.logsList.appendChild(logsHeader);
-
   logsToRender.slice(0, 100).forEach((log, idx) => {
     const logItem = document.createElement("div");
     logItem.className = `log-item ${log.type}`;
