@@ -93,29 +93,105 @@ class RuleManager {
   }
 
   matchRule(url, method = 'GET') {
+    const urlLower = (url || '').toString().toLowerCase();
+    console.log('[RuleManager] Matching URL:', urlLower, 'Method:', method);
     for (const rule of this.rules) {
-      if (!rule.enabled) continue;
-
-      if (rule.method !== 'ALL' && rule.method !== method.toUpperCase()) {
+      if (!rule.enabled) {
+        console.log('[RuleManager] Skipping disabled rule:', rule.name);
         continue;
       }
 
+      if (rule.method !== 'ALL' && rule.method !== method.toUpperCase()) {
+        console.log('[RuleManager] Method mismatch:', rule.method, '!==', method.toUpperCase());
+        continue;
+      }
+
+      const patternRaw = (rule.sourcePattern || '').toString().trim();
+      if (!patternRaw) {
+        console.log('[RuleManager] Empty pattern, skipping rule:', rule.name);
+        continue;
+      }
+      
+      console.log('[RuleManager] Checking rule:', rule.name, 'Pattern:', patternRaw, 'Enabled:', rule.enabled);
+      
+      // 方法1：精确匹配 - 检查请求URL是否以源模式开头
+      const prefix = patternRaw.toLowerCase();
+      console.log('[RuleManager] Method 1 - Prefix matching:', prefix, 'against URL:', urlLower);
+      if (urlLower.startsWith(prefix)) {
+        console.log('[RuleManager] Rule matched (prefix):', rule.name);
+        return rule;
+      }
+      
+      // 方法2：URL对象匹配 - 检查域名是否匹配
       try {
-        const urlPattern = new RegExp(rule.sourcePattern, 'i');
-        if (urlPattern.test(url)) {
+        console.log('[RuleManager] Method 2 - URL object matching');
+        const sourceUrl = new URL(patternRaw);
+        const requestUrl = new URL(url);
+        
+        console.log('[RuleManager] Source URL:', sourceUrl);
+        console.log('[RuleManager] Request URL:', requestUrl);
+        console.log('[RuleManager] Protocol match:', sourceUrl.protocol === requestUrl.protocol);
+        console.log('[RuleManager] Hostname match:', sourceUrl.hostname === requestUrl.hostname);
+        
+        // 如果源和目标的协议、域名都匹配，直接返回规则
+        if (sourceUrl.protocol === requestUrl.protocol && sourceUrl.hostname === requestUrl.hostname) {
+          console.log('[RuleManager] Rule matched (domain):', rule.name);
           return rule;
         }
       } catch (error) {
-        console.error('Invalid regex pattern:', rule.sourcePattern, error);
+        console.log('[RuleManager] URL parsing error:', error.message);
       }
+      
+      // 方法3：正则表达式匹配
+      if (patternRaw.startsWith('/') && patternRaw.endsWith('/')) {
+        console.log('[RuleManager] Method 3 - Regex matching');
+        // 正则表达式匹配
+        const inner = patternRaw.slice(1, -1);
+        const urlPattern = new RegExp(inner, 'i');
+        if (urlPattern.test(url)) {
+          console.log('[RuleManager] Rule matched (regex):', rule.name);
+          return rule;
+        }
+      }
+      
+      console.log('[RuleManager] Rule not matched:', rule.name);
     }
+    console.log('[RuleManager] No rule matched for URL:', urlLower);
     return null;
   }
 
   calculateTargetUrl(sourceUrl, rule) {
     try {
-      const urlPattern = new RegExp(rule.sourcePattern, 'i');
-      let targetUrl = sourceUrl.replace(urlPattern, rule.targetUrl);
+      let targetUrl;
+      const pattern = rule.sourcePattern;
+      
+      console.log('[RuleManager] Calculating target URL for:', sourceUrl, 'using pattern:', pattern, 'target:', rule.targetUrl);
+      
+      // 检查是否为正则表达式格式（以/开头和结尾）
+      if (pattern.startsWith('/') && pattern.endsWith('/')) {
+        // 正则表达式替换
+        const regex = new RegExp(pattern.slice(1, -1), 'i');
+        targetUrl = sourceUrl.replace(regex, rule.targetUrl);
+      } else {
+        // 处理完整域名替换
+        try {
+          const sourceUrlObj = new URL(sourceUrl);
+          const patternUrlObj = new URL(pattern);
+          const targetUrlObj = new URL(rule.targetUrl);
+          
+          // 替换域名，保留路径和查询参数
+          targetUrl = sourceUrl.replace(patternUrlObj.origin, targetUrlObj.origin);
+        } catch (urlError) {
+          // 简单字符串替换（前缀匹配）
+          if (sourceUrl.startsWith(pattern)) {
+            targetUrl = rule.targetUrl + sourceUrl.slice(pattern.length);
+          } else {
+            targetUrl = sourceUrl;
+          }
+        }
+      }
+      
+      console.log('[RuleManager] Calculated target URL:', targetUrl);
       return targetUrl;
     } catch (error) {
       console.error('Error calculating target URL:', error);
@@ -381,6 +457,26 @@ class Logger {
       errors: errors.length
     };
   }
+
+  async searchLogs(keyword, options = {}) {
+    const allLogs = await this.getAllLogs();
+    
+    return allLogs.filter(log => {
+      // 过滤类型
+      if (options.type && log.type !== options.type) {
+        return false;
+      }
+      
+      // 搜索关键字
+      if (keyword) {
+        const searchStr = keyword.toLowerCase();
+        const logStr = JSON.stringify(log).toLowerCase();
+        return logStr.includes(searchStr);
+      }
+      
+      return true;
+    });
+  }
 }
 
 // ============ 初始化 ============
@@ -409,6 +505,7 @@ let logger;
  * 监听来自 content script 的消息
  */
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    console.log('[Background] Received message:', request);    
   // 使用异步处理
   handleMessage(request, sender, sendResponse);
   return true; // 保持通道开放以支持异步响应
@@ -420,6 +517,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 async function handleMessage(request, sender, sendResponse) {
   try {
     const { type, data, tabUrl } = request;
+    console.log('handleMessage type:', type, 'data:', data);
 
     if (type === 'INTERCEPT_REQUEST') {
       await handleInterceptRequest(data, tabUrl, sendResponse);
@@ -478,16 +576,26 @@ async function handleMessage(request, sender, sendResponse) {
  */
 async function handleInterceptRequest(data, tabUrl, sendResponse) {
   try {
-    console.log('[Background] INTERCEPT_REQUEST received, ID:', data.id, 'URL:', data.url);
-    const startTime = Date.now();  // 记录开始时间
-    
-    const rule = ruleManager.matchRule(data.url, data.method);
+    console.log('[Background] Matching rule for URL:', data.url, 'Method:', data.method);
 
+    const startTime = Date.now();  // 记录开始时间
+    // 获取 fallback 设置（默认 true）并随响应回传给 content-script
+    const storageRes = await chrome.storage.local.get(['settings']);
+    const fallbackToOrigin = storageRes.settings?.fallbackToOrigin !== false;
+    
+    // 获取所有规则，用于调试
+    const allRules = await ruleManager.getRules();
+    console.log('[Background] All rules:', allRules);
+    
+    // 尝试匹配规则
+    const rule = ruleManager.matchRule(data.url, data.method);
+    console.log('[Background] Matched rule:', rule);
+    
     if (!rule) {
-      // 没有匹配的规则，记录日志但不转发 -- 诊断信息（仅显示前 5 条规则）
-      const allRules = await ruleManager.getRules();
-      const ruleSnippets = (allRules || []).slice(0, 5).map(r => `${r.enabled ? '[ENABLED]' : '[DISABLED]'} ${r.name || ''} -> ${r.sourcePattern}`).join('; ');
-      console.log(`[Background] No rule matched for: ${data.url}. Rules count: ${allRules.length}. Examples: ${ruleSnippets}`);
+      // 没有匹配的规则，记录日志但不转发 -- 诊断信息
+      const ruleSnippets = (allRules || []).map(r => `${r.enabled ? '[ENABLED]' : '[DISABLED]'} ${r.name || ''} -> ${r.sourcePattern}`).join('; ');
+      console.log('[Background] No rule matched for URL:', data.url, 'Available rules:', ruleSnippets);
+      
       await logger.addRequestLog({
         url: data.url,
         method: data.method,
@@ -498,15 +606,13 @@ async function handleInterceptRequest(data, tabUrl, sendResponse) {
         matched: false
       });
 
-      sendResponse({ success: false, matched: false });
+      sendResponse({ success: false, matched: false, fallbackToOrigin });
       return;
     }
 
-    console.log('[Background] Rule matched:', rule.name, 'for URL:', data.url);
-
     // 计算目标 URL
     const targetUrl = ruleManager.calculateTargetUrl(data.url, rule);
-    console.log('[Background] Target URL:', targetUrl);
+    console.log('[Background] Rule matched:', rule.name, 'for URL:', data.url, '->', targetUrl);
 
     // 记录原始请求
     await logger.addRequestLog({
@@ -527,6 +633,7 @@ async function handleInterceptRequest(data, tabUrl, sendResponse) {
     if (rule.cookies && rule.cookies.enabled) {
       try {
         cookies = await cookieManager.getCookiesForRule(rule.id, targetUrl);
+        console.log('[Background] Got cookies for target URL:', targetUrl, 'Cookies:', cookies);
       } catch (error) {
         console.error('[Background] Failed to get cookies:', error);
       }
@@ -556,8 +663,8 @@ async function handleInterceptRequest(data, tabUrl, sendResponse) {
       forwardOptions.body = data.body;
     }
 
-    console.log('[Background] Forwarding request to:', targetUrl, 'method:', data.method);
     console.log('[Background] Forward options:', JSON.stringify({
+      url: targetUrl,
       method: forwardOptions.method,
       headers: forwardOptions.headers,
       hasBody: !!forwardOptions.body
@@ -568,8 +675,24 @@ async function handleInterceptRequest(data, tabUrl, sendResponse) {
     try {
       response = await fetch(targetUrl, forwardOptions);
     } catch (fetchError) {
-      console.error('[Background] Fetch failed:', fetchError);
-      throw fetchError;
+      console.error('[Background] Fetch failed for rule:', rule?.id, rule?.name, 'targetUrl:', targetUrl, 'error:', fetchError);
+      // 记录错误日志并直接返回给 content-script，避免抛出异常中断流程
+      await logger.addErrorLog({
+        url: data.url,
+        targetUrl: targetUrl,
+        error: fetchError.message || String(fetchError),
+        ruleId: rule?.id,
+        ruleName: rule?.name,
+        timestamp: new Date().toISOString()
+      });
+
+      sendResponse({
+        success: false,
+        error: fetchError.message || String(fetchError),
+        matched: true, // 仍然标记为匹配，因为规则匹配成功，只是请求失败
+        fallbackToOrigin
+      });
+      return;
     }
     
     const duration = Date.now() - startTime;  // 计算耗时
@@ -577,20 +700,16 @@ async function handleInterceptRequest(data, tabUrl, sendResponse) {
 
     // 获取响应数据
     const contentType = response.headers.get('content-type');
-    console.log('[Background] Response content-type:', contentType);
     let responseBody;
 
     if (contentType && contentType.includes('application/json')) {
       try {
         responseBody = await response.json();
-        console.log('[Background] Parsed JSON response, type:', typeof responseBody);
       } catch (parseError) {
-        console.warn('[Background] Failed to parse JSON, falling back to text:', parseError);
         responseBody = await response.text();
       }
     } else {
       responseBody = await response.text();
-      console.log('[Background] Got text response, length:', responseBody.length);
     }
 
     console.log('[Background] Response body type:', typeof responseBody, 'length:', responseBody?.length || responseBody?.toString?.length);
@@ -619,7 +738,7 @@ async function handleInterceptRequest(data, tabUrl, sendResponse) {
     };
 
     console.log('[Background] Sending back response for ID:', data.id, 'status:', responseObj.status);
-    sendResponse({ success: true, matched: true, response: responseObj });
+    sendResponse({ success: true, matched: true, response: responseObj, fallbackToOrigin });
   } catch (error) {
     console.error('[Background] Error forwarding request:', error);
 
@@ -643,7 +762,8 @@ async function handleInterceptRequest(data, tabUrl, sendResponse) {
     sendResponse({
       success: false,
       error: error.message,
-      matched: false
+      matched: false,
+      fallbackToOrigin: typeof fallbackToOrigin !== 'undefined' ? fallbackToOrigin : true
     });
   }
 }
@@ -679,20 +799,7 @@ async function handleInterceptError(data, sendResponse) {
   }
 }
 
-// 监听扩展安装/更新事件
-chrome.runtime.onInstalled.addListener((details) => {
-  if (details.reason === 'install') {
-    console.log('API Proxy extension installed');
-    // 打开欢迎页面（可选）
-    // chrome.tabs.create({ url: 'popup/popup.html' });
-  } else if (details.reason === 'update') {
-    console.log('API Proxy extension updated');
-  }
-});
-
 // 监听扩展图标点击事件，打开选项页面（新窗口）
 chrome.action.onClicked.addListener(() => {
   chrome.runtime.openOptionsPage();
 });
-
-console.log('Background service worker loaded');

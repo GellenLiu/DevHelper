@@ -132,6 +132,7 @@ class RuleManager {
    * @returns {Object|null} 匹配的规则或 null
    */
   matchRule(url, method = 'GET') {
+    const urlLower = (url || '').toString().toLowerCase();
     for (const rule of this.rules) {
       if (!rule.enabled) continue;
 
@@ -140,11 +141,24 @@ class RuleManager {
         continue;
       }
 
-      // 检查 URL 模式（支持正则表达式）
+      // 使用前缀匹配（以 /.../ 包裹的仍作为正则表达式）
+      const patternRaw = (rule.sourcePattern || '').toString().trim();
+      if (!patternRaw) continue;
+
       try {
-        const urlPattern = new RegExp(rule.sourcePattern, 'i');
-        if (urlPattern.test(url)) {
-          return rule;
+        if (patternRaw.startsWith('/') && patternRaw.endsWith('/')) {
+          // 正则表达式
+          const inner = patternRaw.slice(1, -1);
+          const urlPattern = new RegExp(inner, 'i');
+          if (urlPattern.test(url)) {
+            return rule;
+          }
+        } else {
+          // 前缀匹配（区分大小写? 使用忽略大小写比较）
+          const prefix = patternRaw.toLowerCase();
+          if (urlLower.startsWith(prefix)) {
+            return rule;
+          }
         }
       } catch (error) {
         console.error('Invalid regex pattern:', rule.sourcePattern, error);

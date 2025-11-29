@@ -60,6 +60,7 @@ function initializeElements() {
         // 日志标签页
         searchLogs: document.getElementById('search-logs'),
         filterType: document.getElementById('filter-type'),
+        filterMatched: document.getElementById('filter-matched'),
         logsList: document.getElementById('logs-list'),
         clearLogsBtn: document.getElementById('clear-logs-btn'),
         exportLogsBtn: document.getElementById('export-logs-btn'),
@@ -175,6 +176,9 @@ function initializeEventListeners() {
         if (elements.filterType) {
             elements.filterType.addEventListener('change', filterLogs);
         }
+        if (elements.filterMatched) {
+            elements.filterMatched.addEventListener('change', filterLogs);
+        }
         if (elements.clearLogsBtn) {
             elements.clearLogsBtn.addEventListener('click', clearLogs);
         }
@@ -267,18 +271,33 @@ function renderRulesList() {
             <div class="rule-info">
                 <div class="rule-name">${escapeHtml(rule.name)}</div>
                 <div class="rule-details">
-                    <span><strong>源:</strong> ${escapeHtml(rule.sourcePattern.substring(0, 40))}...</span>
-                    <span><strong>目标:</strong> ${escapeHtml(rule.targetUrl.substring(0, 40))}...</span>
-                    <span><strong>方法:</strong> ${rule.method}</span>
+                    <div class="rule-detail-row">
+                        <span class="rule-detail-label">源:</span>
+                        <span class="rule-detail-value">${escapeHtml(rule.sourcePattern)}</span>
+                    </div>
+                    <div class="rule-detail-row">
+                        <span class="rule-detail-label">目标:</span>
+                        <span class="rule-detail-value">${escapeHtml(rule.targetUrl)}</span>
+                    </div>
+                    <div class="rule-detail-row">
+                        <span class="rule-detail-label">方法:</span>
+                        <span class="rule-detail-value">${rule.method}</span>
+                    </div>
+                    <div class="rule-detail-row">
+                        <span class="rule-detail-label">状态:</span>
+                        <span class="rule-detail-value">${rule.enabled ? '启用' : '禁用'}</span>
+                    </div>
                 </div>
             </div>
             <div class="rule-actions">
-                <button class="toggle-switch ${rule.enabled ? 'enabled' : ''}" 
-                        data-action="toggle"
-                        title="${rule.enabled ? '禁用' : '启用'}"></button>
+                <button data-action="toggle" 
+                        title="${rule.enabled ? '禁用' : '启用'}"
+                        class="${rule.enabled ? 'enabled' : ''}">
+                    ${rule.enabled ? '禁用' : '启用'}
+                </button>
                 <button data-action="edit">编辑</button>
-                <button data-action="delete">删除</button>
                 <button data-action="duplicate">复制</button>
+                <button data-action="delete">删除</button>
             </div>
         `;
         elements.rulesList.appendChild(ruleItem);
@@ -712,7 +731,10 @@ async function loadLogs() {
         chrome.runtime.sendMessage({ type: 'GET_LOGS' }, (response) => {
             if (response && response.logs) {
                 logs = response.logs;
-                renderLogsList(logs);
+                console.log('Loaded logs:', logs.length, 'total logs');
+                console.log('First few logs:', logs.slice(0, 5));
+                // 应用筛选条件，默认只显示被转发的请求
+                searchLogs();
                 updateLogStats();
                 resolve();
             }
@@ -909,12 +931,28 @@ function copyLogToClipboard() {
 }
 
 function searchLogs() {
-    const keyword = elements.searchLogs.value;
-    const type = elements.filterType.value;
+    // 安全获取元素值，防止元素不存在导致的错误
+    const keyword = elements.searchLogs ? elements.searchLogs.value.toLowerCase() : '';
+    const type = elements.filterType ? elements.filterType.value : '';
+    const matchedFilter = elements.filterMatched ? elements.filterMatched.value : '';
 
     const filtered = logs.filter(log => {
+        // 类型筛选
         if (type && log.type !== type) return false;
-        if (keyword && !log.url?.includes(keyword)) return false;
+        
+        // 匹配状态筛选
+        if (matchedFilter === 'matched') {
+            if (!log.matched) return false;
+        } else if (matchedFilter === 'unmatched') {
+            if (log.matched) return false;
+        }
+        
+        // 关键字搜索
+        if (keyword) {
+            const logUrl = log.sourceUrl || log.url || '';
+            const logStr = JSON.stringify(log).toLowerCase();
+            return logStr.includes(keyword) || logUrl.toLowerCase().includes(keyword);
+        }
         return true;
     });
 

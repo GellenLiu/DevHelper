@@ -28,6 +28,7 @@ window.fetch = function(...args) {
   };
 
   // 发送请求信息到 content script
+  console.log('[Fetch] Posting INTERCEPT_REQUEST, ID:', requestId, 'URL:', requestUrl);
   window.postMessage({
     type: 'INTERCEPT_REQUEST',
     data: requestInfo
@@ -35,20 +36,21 @@ window.fetch = function(...args) {
 
   // 返回一个 Promise，等待来自 content script 的响应
   return new Promise((resolve, reject) => {
-    // 先读取 fallbackToOrigin 设置
-    chrome.storage.local.get('settings', (result) => {
-      const fallbackToOrigin = result.settings?.fallbackToOrigin !== false;
-
-      const responseListener = (event) => {
+    let responseListener;
+    responseListener = (event) => {
+      console.log('[Fetch] Received message event:', event.data?.type, 'from', event.data?.from);
         if (event.source !== window) return;
 
         const { type, data } = event.data;
         if (type === 'FORWARD_RESPONSE' && data.id === requestId && data.from === 'content-script') {
           window.removeEventListener('message', responseListener);
           // 收到代理响应
+          console.log('[Fetch] FORWARD_RESPONSE received for ID:', requestId, 'error:', data.error);
+          const fallbackToOrigin = data.fallbackToOrigin !== false;
 
           if (data.error === 'NO_RULE_MATCHED') {
             // 无匹配规则，使用原始请求
+            console.log('[Fetch] No rule matched for ID:', requestId, 'using original request');
             originalFetch.apply(window, args)
               .then(resolve)
               .catch(reject);
@@ -96,6 +98,7 @@ window.fetch = function(...args) {
             });
           }
           // 返回代理响应
+          console.log('[Fetch] Resolving with forwarded response for ID:', requestId, 'status:', data.status);
           resolve(response);
         }
       };
@@ -114,7 +117,6 @@ window.fetch = function(...args) {
           .catch(reject);
       }, 5000);
     });
-  });
 };
 
 // 拦截 XMLHttpRequest
@@ -147,6 +149,7 @@ XHRPrototype.send = function(body) {
   let shouldExecuteOriginal = true;
 
   // 记录请求
+  console.log('[XHR] Posting INTERCEPT_REQUEST, ID:', requestId, 'URL:', xhr.__url);
   window.postMessage({
     type: 'INTERCEPT_REQUEST',
     data: {
@@ -192,10 +195,8 @@ XHRPrototype.send = function(body) {
 
 
   // 监听来自 content script 的代理响应，支持 fallbackToOrigin 设置
-  chrome.storage.local.get('settings', (result) => {
-    const fallbackToOrigin = result.settings?.fallbackToOrigin !== false;
-
-    const responseListener = (event) => {
+  let responseListener;
+  responseListener = (event) => {
       if (event.source !== window) return;
 
       const { type, data } = event.data;
@@ -204,6 +205,7 @@ XHRPrototype.send = function(body) {
         // 收到代理响应
         proxyResponseReceived = true;
 
+        const fallbackToOrigin = data.fallbackToOrigin !== false;
         if (data.error === 'NO_RULE_MATCHED') {
           // 无规则匹配
           shouldExecuteOriginal = true;
@@ -352,7 +354,7 @@ XHRPrototype.send = function(body) {
     };
 
     window.addEventListener('message', responseListener);
-  });
+    console.log('[XHR] Listening for FORWARD_RESPONSE for ID:', requestId);
 
   // 10 秒超时
   const timeoutId = setTimeout(() => {
@@ -363,12 +365,33 @@ XHRPrototype.send = function(body) {
     }
   }, 10000);
 
-  // 执行原始请求
-  console.log('[XHR] Executing original request');
-  return originalSend.call(xhr, body);
+  // 只有在没有收到代理响应或者代理响应指示需要回源时，才执行原始请求
+  if (shouldExecuteOriginal) {
+    console.log('[XHR] Executing original request');
+    return originalSend.call(xhr, body);
+  } else {
+    // 已经有代理响应，不需要执行原始请求
+    console.log('[XHR] Using proxy response, skipping original request');
+    return undefined;
+  }
 };
 
 // 不需要额外的 message listener，因为 Fetch 和 XHR 都直接监听 FORWARD_RESPONSE
 
 console.log('Injected script loaded and hooks installed');
+// 向 content script 发送加载完成的通知，便于建立握手
+try {
+  window.postMessage({ type: 'INJECTED_LOADED', from: 'injected' }, '*');
+} catch (e) {
+  console.warn('Failed to post INJECTED_LOADED message', e);
+}
+
+// 监听 content script 的 ACK
+window.addEventListener('message', (event) => {
+  if (event.source !== window) return;
+  const { type } = event.data || {};
+  if (type === 'INJECTED_ACK') {
+    console.log('[Injected] Received INJECTED_ACK from content-script');
+  }
+});
 

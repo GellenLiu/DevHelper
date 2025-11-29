@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API代理转发插件测试</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+
+        h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        input[type="text"],
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        input[type="text"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #e5e7eb;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #d1d5db;
+        }
+
+        .method-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .method-btn {
+            padding: 8px 16px;
+            border: 1px solid #d1d5db;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .method-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .result-section {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+        }
+
+        .result-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .result-content {
+            background: white;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #e5e7eb;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .status-code {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .status-code.success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-code.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .request-info {
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+            border-radius: 4px;
+        }
+
+        .request-info h4 {
+            color: #0369a1;
+            margin-bottom: 5px;
+        }
+
+        .request-info p {
+            margin: 5px 0;
+            font-size: 12px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .tab-btn {
+            padding: 8px 16px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-weight: 500;
+            color: #666;
+            border-bottom: 2px solid transparent;
+        }
+
+        .tab-btn.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 API代理转发插件测试</h1>
+
+        <div class="test-section">
+            <h2>测试配置</h2>
+            <div class="input-group">
+                <label for="test-url">测试URL</label>
+                <input type="text" id="test-url" placeholder="例如: https://mcs.doubao.com/api/test" value="https://mcs.doubao.com/api/test">
+            </div>
+
+            <div class="input-group">
+                <label for="request-data">请求数据 (JSON格式)</label>
+                <textarea id="request-data" placeholder='例如: {"key": "value"}'>{"test": "data"}</textarea>
+            </div>
+
+            <div class="input-group">
+                <label for="request-headers">请求头 (JSON格式)</label>
+                <textarea id="request-headers" placeholder='例如: {"Content-Type": "application/json"}'>{"Content-Type": "application/json"}</textarea>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>发送请求</h2>
+            <div class="method-buttons">
+                <button class="method-btn active" data-method="GET">GET</button>
+                <button class="method-btn" data-method="POST">POST</button>
+            </div>
+
+            <div class="button-group">
+                <button class="btn-primary" onclick="sendXHRRequest()">发送 XHR 请求</button>
+                <button class="btn-primary" onclick="sendFetchRequest()">发送 Fetch 请求</button>
+                <button class="btn-secondary" onclick="clearResults()">清空结果</button>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>请求结果</h2>
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="xhr">XHR 结果</button>
+                <button class="tab-btn" data-tab="fetch">Fetch 结果</button>
+            </div>
+
+            <div id="xhr-result" class="tab-content active">
+                <div class="result-section">
+                    <div class="result-title">XHR 请求结果</div>
+                    <div id="xhr-status" class="status-code"></div>
+                    <div id="xhr-info" class="request-info"></div>
+                    <div id="xhr-response" class="result-content"></div>
+                </div>
+            </div>
+
+            <div id="fetch-result" class="tab-content">
+                <div class="result-section">
+                    <div class="result-title">Fetch 请求结果</div>
+                    <div id="fetch-status" class="status-code"></div>
+                    <div id="fetch-info" class="request-info"></div>
+                    <div id="fetch-response" class="result-content"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let currentMethod = 'GET';
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 方法按钮事件
+            document.querySelectorAll('.method-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.method-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    currentMethod = this.dataset.method;
+                });
+            });
+
+            // 标签页事件
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    document.getElementById(this.dataset.tab + '-result').classList.add('active');
+                });
+            });
+        });
+
+        // 发送 XHR 请求
+        function sendXHRRequest() {
+            const url = document.getElementById('test-url').value;
+            const data = document.getElementById('request-data').value;
+            const headers = document.getElementById('request-headers').value;
+            const method = currentMethod;
+
+            // 清空之前的结果
+            document.getElementById('xhr-status').textContent = '';
+            document.getElementById('xhr-info').innerHTML = '';
+            document.getElementById('xhr-response').textContent = '';
+
+            try {
+                // 解析 JSON 数据
+                const parsedData = method === 'GET' ? null : JSON.parse(data);
+                const parsedHeaders = JSON.parse(headers);
+
+                // 创建 XHR 对象
+                const xhr = new XMLHttpRequest();
+                xhr.open(method, url, true);
+
+                // 设置请求头
+                Object.entries(parsedHeaders).forEach(([key, value]) => {
+                    xhr.setRequestHeader(key, value);
+                });
+
+                // 设置响应处理
+                xhr.onload = function() {
+                    const statusCode = xhr.status;
+                    const statusText = xhr.statusText;
+                    const response = xhr.responseText;
+
+                    // 显示状态码
+                    const statusElement = document.getElementById('xhr-status');
+                    statusElement.textContent = `${statusCode} ${statusText}`;
+                    statusElement.className = `status-code ${statusCode < 400 ? 'success' : 'error'}`;
+
+                    // 显示请求信息
+                    const infoElement = document.getElementById('xhr-info');
+                    infoElement.innerHTML = `
+                        <h4>请求信息</h4>
+                        <p><strong>方法:</strong> ${method}</p>
+                        <p><strong>URL:</strong> ${url}</p>
+                        <p><strong>状态:</strong> ${statusCode} ${statusText}</p>
+                        <p><strong>响应时间:</strong> ${Date.now() - startTime} ms</p>
+                    `;
+
+                    // 显示响应内容
+                    const responseElement = document.getElementById('xhr-response');
+                    try {
+                        // 尝试格式化 JSON 响应
+                        const parsedResponse = JSON.parse(response);
+                        responseElement.textContent = JSON.stringify(parsedResponse, null, 2);
+                    } catch (e) {
+                        // 非 JSON 响应直接显示
+                        responseElement.textContent = response;
+                    }
+                };
+
+                // 设置错误处理
+                xhr.onerror = function() {
+                    const statusElement = document.getElementById('xhr-status');
+                    statusElement.textContent = '请求失败';
+                    statusElement.className = 'status-code error';
+
+                    const infoElement = document.getElementById('xhr-info');
+                    infoElement.innerHTML = `
+                        <h4>请求信息</h4>
+                        <p><strong>方法:</strong> ${method}</p>
+                        <p><strong>URL:</strong> ${url}</p>
+                        <p><strong>状态:</strong> 请求失败</p>
+                    `;
+
+                    const responseElement = document.getElementById('xhr-response');
+                    responseElement.textContent = '请求失败，请检查网络连接或URL是否正确';
+                };
+
+                // 记录开始时间
+                const startTime = Date.now();
+
+                // 发送请求
+                if (method === 'GET') {
+                    xhr.send();
+                } else {
+                    xhr.send(JSON.stringify(parsedData));
+                }
+            } catch (error) {
+                document.getElementById('xhr-status').textContent = '配置错误';
+                document.getElementById('xhr-status').className = 'status-code error';
+                document.getElementById('xhr-response').textContent = '错误: ' + error.message;
+            }
+        }
+
+        // 发送 Fetch 请求
+        async function sendFetchRequest() {
+            const url = document.getElementById('test-url').value;
+            const data = document.getElementById('request-data').value;
+            const headers = document.getElementById('request-headers').value;
+            const method = currentMethod;
+
+            // 清空之前的结果
+            document.getElementById('fetch-status').textContent = '';
+            document.getElementById('fetch-info').innerHTML = '';
+            document.getElementById('fetch-response').textContent = '';
+
+            try {
+                // 解析 JSON 数据
+                const parsedHeaders = JSON.parse(headers);
+                const fetchOptions = {
+                    method: method,
+                    headers: parsedHeaders,
+                    credentials: 'include' // 包含 cookies
+                };
+
+                // 添加请求体
+                if (method !== 'GET') {
+                    fetchOptions.body = data;
+                }
+
+                // 记录开始时间
+                const startTime = Date.now();
+
+                // 发送请求
+                const response = await fetch(url, fetchOptions);
+                const statusCode = response.status;
+                const statusText = response.statusText;
+
+                // 获取响应内容
+                let responseText;
+                try {
+                    responseText = await response.json();
+                    responseText = JSON.stringify(responseText, null, 2);
+                } catch (e) {
+                    responseText = await response.text();
+                }
+
+                // 显示状态码
+                const statusElement = document.getElementById('fetch-status');
+                statusElement.textContent = `${statusCode} ${statusText}`;
+                statusElement.className = `status-code ${statusCode < 400 ? 'success' : 'error'}`;
+
+                // 显示请求信息
+                const infoElement = document.getElementById('fetch-info');
+                infoElement.innerHTML = `
+                    <h4>请求信息</h4>
+                    <p><strong>方法:</strong> ${method}</p>
+                    <p><strong>URL:</strong> ${url}</p>
+                    <p><strong>状态:</strong> ${statusCode} ${statusText}</p>
+                    <p><strong>响应时间:</strong> ${Date.now() - startTime} ms</p>
+                `;
+
+                // 显示响应内容
+                const responseElement = document.getElementById('fetch-response');
+                responseElement.textContent = responseText;
+            } catch (error) {
+                document.getElementById('fetch-status').textContent = '请求失败';
+                document.getElementById('fetch-status').className = 'status-code error';
+                document.getElementById('fetch-info').innerHTML = `
+                    <h4>请求信息</h4>
+                    <p><strong>方法:</strong> ${method}</p>
+                    <p><strong>URL:</strong> ${url}</p>
+                    <p><strong>状态:</strong> 请求失败</p>
+                `;
+                document.getElementById('fetch-response').textContent = '错误: ' + error.message;
+            }
+        }
+
+        // 清空结果
+        function clearResults() {
+            // 清空 XHR 结果
+            document.getElementById('xhr-status').textContent = '';
+            document.getElementById('xhr-info').innerHTML = '';
+            document.getElementById('xhr-response').textContent = '';
+
+            // 清空 Fetch 结果
+            document.getElementById('fetch-status').textContent = '';
+            document.getElementById('fetch-info').innerHTML = '';
+            document.getElementById('fetch-response').textContent = '';
+        }
+    </script>
+</body>
+</html>
