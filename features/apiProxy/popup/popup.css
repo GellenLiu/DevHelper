@@ -1,0 +1,251 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background-color: #f5f5f5;
+    color: #333;
+    width: 350px;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.popup-container {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    border-bottom: 1px solid #e0e0e0;
+    background-color: #fafafa;
+    border-radius: 8px 8px 0 0;
+}
+
+.popup-header h1 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+}
+
+.fullscreen-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background-color: #5d5959;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.fullscreen-btn:hover {
+    background-color: #46464d;
+}
+
+.fullscreen-btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+.main-content {
+    padding: 16px;
+    padding-top: 12px;
+}
+
+.toggle-section {
+    margin-bottom: 12px;
+    padding: 12px;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+}
+
+.toggle-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 48px;
+    height: 24px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 24px;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+    background-color: #4285f4;
+}
+
+input:focus + .toggle-slider {
+    box-shadow: 0 0 1px #4285f4;
+}
+
+input:checked + .toggle-slider:before {
+    transform: translateX(24px);
+}
+
+.rules-section h2 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #555;
+}
+
+.rules-container {
+    max-height: 300px;
+    overflow-y: auto;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    border: 1px solid #e0e0e0;
+}
+
+.no-rules {
+    padding: 20px;
+    text-align: center;
+    color: #999;
+    font-size: 13px;
+}
+
+.rule-item {
+    padding: 12px;
+    border-bottom: 1px solid #e0e0e0;
+    background-color: white;
+}
+
+.rule-item:last-child {
+    border-bottom: none;
+}
+
+.rule-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.rule-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    margin-right: 12px;
+}
+
+.rule-toggle-container {
+    display: flex;
+    align-items: center;
+}
+
+.rule-toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 40px;
+    height: 20px;
+}
+
+.rule-toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.rule-toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 20px;
+}
+
+.rule-toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 14px;
+    width: 14px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .rule-toggle-slider {
+    background-color: #4285f4;
+}
+
+input:focus + .rule-toggle-slider {
+    box-shadow: 0 0 1px #4285f4;
+}
+
+input:checked + .rule-toggle-slider:before {
+    transform: translateX(20px);
+}
+
+/* 滚动条样式 */
+.rules-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.rules-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.rules-container::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.rules-container::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}

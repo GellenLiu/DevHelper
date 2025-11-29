@@ -61,6 +61,9 @@ class RuleManager {
   }
 
   async updateRule(id, updates) {
+    // 先从存储中加载最新的规则
+    await this.getRules();
+    
     const rule = this.rules.find(r => r.id === id);
     if (!rule) {
       throw new Error(`Rule with id ${id} not found`);

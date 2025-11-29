@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API代理转发工具</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <div class="popup-container">
+        <header class="popup-header">
+            <h1>API代理转发工具</h1>
+            <button id="fullscreen-btn" class="fullscreen-btn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+                </svg>
+                全屏
+            </button>
+        </header>
+
+        <div class="main-content">
+            <div class="toggle-section">
+                <label class="toggle-label">
+                    <span>插件开关</span>
+                    <div class="toggle-switch">
+                        <input type="checkbox" id="plugin-toggle">
+                        <span class="toggle-slider"></span>
+                    </div>
+                </label>
+            </div>
+
+            <div class="rules-section">
+                <h2>规则列表</h2>
+                <div id="rules-container" class="rules-container">
+                    <!-- 规则列表将通过JS动态生成 -->
+                    <div class="no-rules">暂无规则</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="../managers/storage-manager.js"></script>
+    <script src="../managers/rule-manager.js"></script>
+    <script src="popup.js"></script>
+</body>
+</html>
