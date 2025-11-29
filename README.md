@@ -5,54 +5,18 @@
 
 # Dev Helper - 开发者工具扩展
 
-一个强大的前端开发提效工具，通过DevUI扩展增强您的开发工作流程。
+前端开发提效工具合集。
 
-## Features
-
-### Env Configurator - 环境配置修改器 - 网页配置修改提效工具
-> 劫持环境配置，修改配置参数，无时序影响
-- 自定义环境设置参数
-- 开发环境快速切换
-<div align="center">
-  <img src="./assets/envConfigurator1.png" alt="env-configurator 效果图">
-  <p align="center" style="font-size: 0.8em; margin-top: 0.5em;">env-configurator 效果图</p>
-</div>
-<div align="center">
-  <img src="./assets/envConfigurator2.png" alt="env-configurator 效果图">
-  <p align="center" style="font-size: 0.8em; margin-top: 0.5em;">env-configurator 配置页面</p>
-</div>
-
-### JS Error Monitor - 前端错误监控、稳定性指标提效工具
-> 实时监控网页JS错误并提示，避免在未打开控制台时漏掉重要错误。在错误上报的第一时间处理问题，而不是在埋点平台后续追踪。
-- 实时JavaScript错误跟踪
-- 可配置的错误类型过滤 (SyntaxError, ReferenceError, etc.)
-- 支持自定义错误消息内容过滤
-- 支持监控域名配置
-
-<div align="center">
-  <img src="features/js-error-monitor/assets/demo.png" alt="js-error-monitor 效果图">
-  <p align="center" style="font-size: 0.8em; margin-top: 0.5em;">js-error-monitor 效果图</p>
-</div>
+- apiProxy
+- env configurator
+- js error monitor
+- matechat
 
 
-
-
-### MateChat 智能助手
-
-> matechat个人智能助手
-> 
-<div align="center">
-  <img src="assets/matechat.png" alt="manage 效果图">
-  <p align="center" style="font-size: 0.8em; margin-top: 0.5em;">matechat智能助手</p>
-
-</div>
 
 ### 更多功能欢迎贡献
 
-<div align="center">
-  <img src="assets/manage.png" alt="manage 效果图">
-  <p align="center" style="font-size: 0.8em; margin-top: 0.5em;">功能管理页面</p>
-</div>
+
 
 ## 安装方法
 
@@ -72,25 +36,9 @@ npm run build:all
    - 在右上角启用"开发者模式"
    - 点击"加载已解压的扩展程序"并选择项目目录
 
-## 使用说明
-
-1. 点击浏览器工具栏中的DevUI Dev Helper图标打开主界面
-2. 使用开关切换功能的开启/关闭状态
-3. 点击"管理功能"自定义界面中显示的功能
-4. 点击功能名称可配置各个功能的详细设置
-5. 所有设置会自动保存
-
-## 开发指南
-
-### 前置要求
-- Chrome浏览器
-- Node.js v22.12.0
-
 ## 贡献指南
 
-按照常规浏览器插件开发，放置在`features`目录下，并在`manifest.json`中配置相关权限及其资源。
-
-欢迎贡献代码！请随时提交Pull Request。
+按照常规浏览器插件开发，放置在`features`目录下
 
 ### Pull Request规范
 1. Fork本仓库
@@ -103,9 +51,6 @@ npm run build:all
 
 本项目采用MIT许可证 - 详见[LICENSE](LICENSE)文件。
 
-## 致谢
-- [DevUI设计系统](https://devui.design/)
-- 所有为本项目做出贡献的开发者们
 
 ## Contact
 
