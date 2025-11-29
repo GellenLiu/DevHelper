@@ -75,26 +75,6 @@ window.addEventListener('message', async (event) => {
           } else {
             // 没有匹配的规则或其他错误，让原始请求继续
             console.log('[Content Script] No rule matched or error for ID:', data.id, ', letting original request continue');
-            try {
-              chrome.runtime.sendMessage({ type: 'GET_RULES' }, (resp) => {
-                if (resp && resp.rules) {
-                  console.info('[Content Script] Current rules for debugging:', resp.rules);
-                  // 显示所有规则的详细信息
-                  resp.rules.forEach((rule, index) => {
-                    console.info(`[Content Script] Rule ${index + 1}:`, {
-                      id: rule.id,
-                      name: rule.name,
-                      enabled: rule.enabled,
-                      sourcePattern: rule.sourcePattern,
-                      targetUrl: rule.targetUrl,
-                      method: rule.method
-                    });
-                  });
-                }
-              });
-            } catch (e) {
-              console.error('[Content Script] Failed to fetch rules for debugging:', e);
-            }
             window.postMessage({ type: 'FORWARD_RESPONSE', data: { id: data.id, error: 'NO_RULE_MATCHED', matched: false, fallbackToOrigin: response?.fallbackToOrigin !== false, from: 'content-script' } }, '*');
           }
         });

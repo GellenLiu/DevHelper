@@ -592,20 +592,7 @@ async function handleInterceptRequest(data, tabUrl, sendResponse) {
     console.log('[Background] Matched rule:', rule);
     
     if (!rule) {
-      // 没有匹配的规则，记录日志但不转发 -- 诊断信息
-      const ruleSnippets = (allRules || []).map(r => `${r.enabled ? '[ENABLED]' : '[DISABLED]'} ${r.name || ''} -> ${r.sourcePattern}`).join('; ');
-      console.log('[Background] No rule matched for URL:', data.url, 'Available rules:', ruleSnippets);
-      
-      await logger.addRequestLog({
-        url: data.url,
-        method: data.method,
-        headers: data.headers,
-        body: data.body,
-        timestamp: data.timestamp,
-        tabUrl: tabUrl,
-        matched: false
-      });
-
+      // 没有匹配的规则，直接返回，不记录日志
       sendResponse({ success: false, matched: false, fallbackToOrigin });
       return;
     }

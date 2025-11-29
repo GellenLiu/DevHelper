@@ -400,7 +400,7 @@ body {
 
 .toggle-switch {
     width: 40px;
-    height: 24px;
+    height: 20px;
     border-radius: 12px;
     background: #37373d;
     border: none;
@@ -413,8 +413,8 @@ body {
 .toggle-switch::after {
     content: '';
     position: absolute;
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
     background: #666;
     border-radius: 50%;
     top: 2px;
