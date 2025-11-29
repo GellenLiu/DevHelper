@@ -420,6 +420,23 @@ function openRuleEditor(ruleId = null) {
 
     if (elements.ruleEditor) {
       elements.ruleEditor.style.display = "block";
+      
+      // 如果是编辑现有规则，将编辑器插入到对应的rule-item下方
+      if (ruleId) {
+        const ruleItem = document.querySelector(`[data-rule-id="${ruleId}"]`);
+        if (ruleItem) {
+          // 保存编辑器的原始父元素，以便关闭时恢复
+          elements.ruleEditor._originalParent = elements.ruleEditor.parentNode;
+          // 将编辑器插入到rule-item后面
+          ruleItem.parentNode.insertBefore(elements.ruleEditor, ruleItem.nextSibling);
+        }
+      } else {
+        // 新建规则时，将编辑器恢复到原始位置
+        if (elements.ruleEditor._originalParent && elements.ruleEditor.parentNode !== elements.ruleEditor._originalParent) {
+          elements.ruleEditor._originalParent.appendChild(elements.ruleEditor);
+        }
+      }
+      
       console.log("Rule editor opened successfully");
     } else {
       console.error("Rule editor element not found");
@@ -431,6 +448,12 @@ function openRuleEditor(ruleId = null) {
 
 function closeRuleEditor() {
   elements.ruleEditor.style.display = "none";
+  
+  // 将编辑器恢复到原始位置（如果有保存的话）
+  if (elements.ruleEditor._originalParent && elements.ruleEditor.parentNode !== elements.ruleEditor._originalParent) {
+    elements.ruleEditor._originalParent.appendChild(elements.ruleEditor);
+  }
+  
   currentEditingRuleId = null;
   currentEditingHeaders = [];
 }
@@ -537,10 +560,6 @@ async function toggleRuleStatus(ruleId) {
 
 function editRule(ruleId) {
   openRuleEditor(ruleId);
-  // 滚动到编辑面板
-  setTimeout(() => {
-    elements.ruleEditor.scrollIntoView({ behavior: "smooth" });
-  }, 100);
 }
 
 async function deleteRule(ruleId) {

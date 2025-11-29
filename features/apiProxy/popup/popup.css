@@ -233,12 +233,10 @@ body {
     display: grid;
     gap: 0;
     margin: 0 auto;
-    max-height: 400px;
     overflow-y: auto;
     background: #1e1e1e;
     border: 1px solid #3e3e42;
     border-radius: 4px;
-    overflow: hidden;
 }
 
 .rule-item {
@@ -511,7 +509,6 @@ body {
 
 .editor-content {
     padding: 16px;
-    max-height: 400px;
     overflow-y: auto;
     background: #1e1e1e;
     color: #e0e0e0;
