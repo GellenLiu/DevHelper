@@ -44,7 +44,16 @@
       .form-actions {
         display: flex;
         flex-direction: row-reverse;
-        justify-content: flex-end;
+        justify-content: flex-start;
+        gap: 8px;
+      }
+
+      .cookie-manager-content {
+        padding-left: 20px;
+      }
+
+      .cookie-btns {
+        display: flex;
         gap: 8px;
       }
 
@@ -173,34 +182,42 @@
               </div>
 
               <!-- Cookie 配置 -->
-              <div class="form-group checkbox-group">
-                <label>
-                  <input type="checkbox" id="enable-cookies" />
-                  <span>启用 Cookie 管理</span>
-                </label>
+              <div class="form-group">
+                <div class="toggle-group">
+                  <span class="toggle-label">启用 Cookie 管理</span>
+                  <button
+                    type="button"
+                    id="enable-cookies"
+                    class="toggle-switch"
+                  ></button>
+                </div>
               </div>
 
               <div
                 id="cookie-settings"
                 style="display: none; margin-bottom: 16px"
               >
-                <div class="form-group checkbox-group">
-                  <label>
-                    <input type="checkbox" id="auto-cookies" checked />
-                    <span>自动收集目标域名的 Cookie</span>
-                  </label>
+                <div class="form-group">
+                  <div class="toggle-group">
+                    <span class="toggle-label">自动收集目标域名的 Cookie</span>
+                    <button
+                      type="button"
+                      id="auto-cookies"
+                      class="toggle-switch enabled"
+                    ></button>
+                  </div>
                 </div>
-
-                <button
-                  id="manage-cookies-btn"
-                  class="btn btn-secondary"
-                  style="margin-bottom: 12px"
-                >
-                  管理 Cookie
-                </button>
-                <button id="refresh-cookies-btn" class="btn btn-secondary">
-                  刷新 Cookie
-                </button>
+                <div class="cookie-btns">
+                  <button
+                    id="manage-cookies-btn"
+                    class="btn btn-secondary"
+                  >
+                    管理 Cookie
+                  </button>
+                  <button id="refresh-cookies-btn" class="btn btn-secondary">
+                    刷新 Cookie
+                  </button>
+                </div>
               </div>
 
               <!-- Cookie 管理器 -->
@@ -216,45 +233,19 @@
 
                 <div class="cookie-manager-content">
                   <div class="cookie-section">
-                    <h5>自动收集的 Cookie</h5>
-                    <div id="auto-cookies-list" class="cookies-list">
-                      <div id="no-auto-cookies" class="empty-state">
-                        暂无 Cookie
-                      </div>
-                    </div>
+                  <div class="form-group">
+                    <label for="cookie-textarea">Cookie 列表 (格式: key1=value1; key2=value2;)</label>
+                    <textarea
+                      id="cookie-textarea"
+                      placeholder="例如: username=admin; token=123456;"
+                      rows="5"
+                      style="width: 100%; margin-bottom: 8px;"
+                    ></textarea>
+                    <button id="add-cookie-btn" class="btn btn-primary">
+                      保存 Cookie
+                    </button>
                   </div>
-
-                  <div class="cookie-section">
-                    <h5>手动添加的 Cookie</h5>
-                    <div class="cookie-input-group">
-                      <input
-                        type="text"
-                        id="cookie-name"
-                        placeholder="Cookie 名称"
-                      />
-                      <input
-                        type="text"
-                        id="cookie-value"
-                        placeholder="Cookie 值"
-                      />
-                      <button id="add-cookie-btn" class="btn btn-primary">
-                        添加
-                      </button>
-                    </div>
-                    <div id="manual-cookies-list" class="cookies-list">
-                      <div id="no-manual-cookies" class="empty-state">
-                        暂无 Cookie
-                      </div>
-                    </div>
-                  </div>
-
-                  <button
-                    id="close-cookie-manager-btn"
-                    class="btn btn-secondary"
-                    style="width: 100%; margin-top: 12px"
-                  >
-                    关闭
-                  </button>
+                </div>
                 </div>
               </div>
 
@@ -344,6 +335,34 @@
         <div id="settings-tab" class="tab-content">
           <div class="section-header">
             <h2>设置</h2>
+          </div>
+
+          <div class="settings-group">
+            <h3>全局设置</h3>
+            <div class="form-group checkbox-group">
+              <label>
+                <input type="checkbox" id="global-enable" checked />
+                <span>启用插件</span>
+              </label>
+              <small style="display: block; margin-top: 8px">
+                ✓ 打开：插件在所有符合条件的页面生效<br />
+                ✗ 关闭：插件在所有页面都不生效
+              </small>
+            </div>
+          </div>
+
+          <div class="settings-group">
+            <h3>域名配置</h3>
+            <div class="form-group">
+              <label for="allowed-domains">允许的域名列表（每行一个域名）</label>
+              <textarea
+                id="allowed-domains"
+                placeholder="例如：\nexample.com\nwww.example.com\n*.example.com"
+                rows="5"
+                style="width: 100%; margin-bottom: 8px;"
+              ></textarea>
+              <small>只有浏览器窗口URL的域名符合配置的域名才会注入脚本。支持通配符（如*.example.com），默认值为*表示允许所有域名，留空表示所有页面都不启用</small>
+            </div>
           </div>
 
           <div class="settings-group">

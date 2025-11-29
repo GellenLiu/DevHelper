@@ -240,7 +240,7 @@ body {
 }
 
 .rule-item {
-    height: 100px;
+    min-height: 100px;
     background: #1e1e1e;
     border: none;
     border-bottom: 1px solid #3e3e42;
@@ -281,7 +281,6 @@ body {
 }
 
 .rule-name::before {
-    content: '';
     width: 8px;
     height: 8px;
     background: #667eea;
@@ -303,6 +302,7 @@ body {
     display: flex;
     align-items: center;
     gap: 6px;
+    width: 200px;
     flex-wrap: wrap;
 }
 
@@ -600,6 +600,23 @@ body {
     height: 18px;
     cursor: pointer;
     accent-color: #667eea;
+}
+
+/* 开关组 */
+.toggle-group {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    font-weight: 500;
+    color: #ccc;
+}
+
+.toggle-label {
+    font-size: 13px;
+    cursor: pointer;
+    user-select: none;
 }
 
 /* 部分 */
@@ -1010,6 +1027,10 @@ code {
     margin-bottom: 24px;
     padding-bottom: 16px;
     border-bottom: 1px solid #3e3e42;
+}
+
+.settings-group .btn {
+    margin-top: 12px;
 }
 
 .settings-group h3 {

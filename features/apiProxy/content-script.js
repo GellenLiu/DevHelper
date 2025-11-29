@@ -3,22 +3,74 @@
  * 负责注入脚本、转发消息、处理请求转发
  */
 
-// 注入 injected.js 脚本到页面
-function injectScript() {
-  try {
-    const script = document.createElement('script');
-    script.src = chrome.runtime.getURL('injected.js');
-    script.onload = function() { this.remove(); };
-    script.onerror = function() { console.error('Failed to load injected script'); this.remove(); };
-    (document.head || document.documentElement).appendChild(script);
-  } catch (error) {
-    console.error('Error injecting script:', error);
-  }
-}
-
 // 记录当前活跃的规则
 let activeRules = [];
 let handshakeReceived = false;
+
+// 检查域名是否在允许列表中
+function isDomainAllowed(domain, allowedDomains) {
+  if (!allowedDomains || allowedDomains.trim() === '') {
+    return false; // 空列表表示所有页面都不启用
+  }
+
+  const domains = allowedDomains.split('\n').map(d => d.trim()).filter(d => d !== '');
+  
+  // 转换为小写进行比较
+  const lowerDomain = domain.toLowerCase();
+  
+  for (const allowedDomain of domains) {
+    const lowerAllowed = allowedDomain.toLowerCase();
+    
+    // 完全匹配
+    if (lowerDomain === lowerAllowed) {
+      return true;
+    }
+    
+    // 子域名匹配，如 *.example.com
+    if (lowerAllowed.startsWith('*.')) {
+      const baseDomain = lowerAllowed.slice(2);
+      if (lowerDomain === baseDomain || lowerDomain.endsWith('.' + baseDomain)) {
+        return true;
+      }
+    }
+    
+    // 通配符匹配，如 *
+    if (lowerAllowed === '*') {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
+// 注入 injected.js 脚本到页面
+function injectScript() {
+  // 获取设置
+  chrome.storage.local.get(['settings'], (result) => {
+    const settings = result.settings || {};
+    
+    // 检查全局开关
+    if (settings.globalEnable === false) {
+      return;
+    }
+    
+    // 检查域名是否在允许列表中
+    const currentDomain = window.location.hostname;
+    if (!isDomainAllowed(currentDomain, settings.allowedDomains)) {
+      return;
+    }
+    
+    // 注入脚本
+    try {
+      const script = document.createElement('script');
+      script.src = chrome.runtime.getURL('injected.js');
+      script.onload = function() { this.remove(); };
+      script.onerror = function() { console.error('Failed to load injected script'); this.remove(); };
+      (document.head || document.documentElement).appendChild(script);
+    } catch (error) {
+    }
+  });
+}
 
 // 初始化时获取规则
 chrome.runtime.sendMessage({ type: 'GET_RULES' }, (response) => {
@@ -44,7 +96,6 @@ window.addEventListener('message', async (event) => {
 
     // 如果注入脚本通知已加载，回个 ack
     if (type === 'INJECTED_LOADED') {
-      console.log('[Content Script] Received INJECTED_LOADED, sending ACK', event.data);
       window.postMessage({ type: 'INJECTED_ACK', from: 'content-script' }, '*');
       handshakeReceived = true;
       return;
@@ -57,13 +108,11 @@ window.addEventListener('message', async (event) => {
         // 发送请求信息到 background script
         chrome.runtime.sendMessage({ type: 'INTERCEPT_REQUEST', data: data, tabUrl: window.location.href }, (response) => {
           if (chrome.runtime.lastError) {
-            console.error('[Content Script] chrome.runtime.lastError:', chrome.runtime.lastError);
             window.postMessage({ type: 'FORWARD_RESPONSE', data: { id: data.id, error: 'BACKGROUND_ERROR: ' + chrome.runtime.lastError.message, from: 'content-script' } }, '*');
             return;
           }
 
           if (!response) {
-            console.warn('[Content Script] Empty response from background for ID:', data.id);
             window.postMessage({ type: 'FORWARD_RESPONSE', data: { id: data.id, error: 'EMPTY_RESPONSE', from: 'content-script' } }, '*');
             return;
           }

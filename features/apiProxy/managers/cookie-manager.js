@@ -23,7 +23,6 @@ class CookieManager {
       });
       return result;
     } catch (error) {
-      console.error('Failed to get cookies for URL:', url, error);
       return {};
     }
   }
@@ -32,26 +31,33 @@ class CookieManager {
    * 获取某个规则的所有 Cookies（手动 + 自动）
    * @param {number} ruleId - 规则 ID
    * @param {string} targetUrl - 目标 URL（用于自动获取）
+   * @param {Object} rule - 规则对象（可选）
    * @returns {Promise<Object>} 合并后的 Cookies
    */
-  async getCookiesForRule(ruleId, targetUrl) {
+  async getCookiesForRule(ruleId, targetUrl, rule = null) {
     // 获取手动配置的 Cookies
     const manualCookies = await this._getManualCookies(ruleId);
 
+    // 判断是否启用自动收集cookie
+    const isAutoEnabled = rule?.cookies?.auto !== false;
+
     // 获取自动 Cookies
     let autoCookies = {};
-    try {
-      autoCookies = await this.getUrlCookies(targetUrl);
-      // 缓存自动获取的 Cookies
-      await this._saveAutoCookies(ruleId, autoCookies);
-    } catch (error) {
-      console.error('Failed to get auto cookies:', error);
-      // 尝试从缓存获取
-      autoCookies = await this._getAutoCookies(ruleId);
+    if (isAutoEnabled) {
+      try {
+        autoCookies = await this.getUrlCookies(targetUrl);
+        // 缓存自动获取的 Cookies
+        await this._saveAutoCookies(ruleId, autoCookies);
+      } catch (error) {
+        console.error('Failed to get auto cookies:', error);
+        // 尝试从缓存获取
+        autoCookies = await this._getAutoCookies(ruleId);
+      }
     }
 
-    // 合并 Cookies，手动配置的优先级更高
-    const merged = { ...autoCookies, ...manualCookies };
+    // 如果启用自动收集，则融合自动和手动cookie，手动cookie优先级更高
+    // 如果禁用自动收集，则只使用手动cookie
+    const merged = isAutoEnabled ? { ...autoCookies, ...manualCookies } : manualCookies;
     return merged;
   }
 

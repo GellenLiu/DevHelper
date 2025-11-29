@@ -51,8 +51,7 @@ function initializeElements() {
     manualCookiesList: document.getElementById("manual-cookies-list"),
     noAutoCookies: document.getElementById("no-auto-cookies"),
     noManualCookies: document.getElementById("no-manual-cookies"),
-    cookieName: document.getElementById("cookie-name"),
-    cookieValue: document.getElementById("cookie-value"),
+    cookieTextarea: document.getElementById("cookie-textarea"),
     addCookieBtn: document.getElementById("add-cookie-btn"),
     closeCookieManagerBtn: document.getElementById("close-cookie-manager-btn"),
     closeCookieManager: document.getElementById("close-cookie-manager"),
@@ -82,6 +81,8 @@ function initializeElements() {
     maxLogs: document.getElementById("max-logs"),
     autoClearLogs: document.getElementById("auto-clear-logs"),
     fallbackToOrigin: document.getElementById("fallback-to-origin"),
+    globalEnable: document.getElementById("global-enable"),
+    allowedDomains: document.getElementById("allowed-domains"),
   };
 }
 
@@ -120,7 +121,6 @@ function initializeEventListeners() {
     // 规则管理
     if (elements.addRuleBtn) {
       elements.addRuleBtn.addEventListener("click", () => {
-        console.log("Add rule button clicked");
         openRuleEditor();
       });
     }
@@ -142,12 +142,18 @@ function initializeEventListeners() {
       elements.saveRuleBtn.addEventListener("click", saveRule);
     }
     if (elements.enableCookies) {
-      elements.enableCookies.addEventListener("change", (e) => {
+      elements.enableCookies.addEventListener("click", (e) => {
+        e.target.classList.toggle("enabled");
         if (elements.cookieSettings) {
-          elements.cookieSettings.style.display = e.target.checked
+          elements.cookieSettings.style.display = e.target.classList.contains("enabled")
             ? "block"
             : "none";
         }
+      });
+    }
+    if (elements.autoCookies) {
+      elements.autoCookies.addEventListener("click", (e) => {
+        e.target.classList.toggle("enabled");
       });
     }
     if (elements.addHeaderBtn) {
@@ -294,6 +300,10 @@ function renderRulesList() {
                         <span class="rule-detail-label">方法:</span>
                         <span class="rule-detail-value">${rule.method}</span>
                     </div>
+                    <div class="rule-detail-row">
+                        <span class="rule-detail-label">Cookie:</span>
+                        <span class="rule-detail-value">${rule.cookies?.enabled ? (rule.cookies?.auto ? 'auto' : (rule.cookies?.manual && rule.cookies.manual.length > 0 ? escapeHtml(rule.cookies.manual.map(c => `${c.name}=${c.value}`).join('; ')).substring(0, 50) + (rule.cookies.manual.map(c => `${c.name}=${c.value}`).join('; ').length > 50 ? '...' : '') : '无')) : '禁用'}</span>
+                    </div>
 
                 </div>
             </div>
@@ -372,7 +382,6 @@ function openRuleEditor(ruleId = null) {
       // 编辑现有规则
       const rule = rules.find((r) => r.id === ruleId);
       if (!rule) {
-        console.error("Rule not found:", ruleId);
         return;
       }
 
@@ -383,13 +392,23 @@ function openRuleEditor(ruleId = null) {
       if (elements.targetUrl) elements.targetUrl.value = rule.targetUrl;
       if (elements.ruleMethod) elements.ruleMethod.value = rule.method;
       if (elements.ruleDesc) elements.ruleDesc.value = rule.description;
-      if (elements.enableCookies)
-        elements.enableCookies.checked = rule.cookies?.enabled !== false;
-      if (elements.autoCookies)
-        elements.autoCookies.checked = rule.cookies?.auto !== false;
+      if (elements.enableCookies) {
+        if (rule.cookies?.enabled !== false) {
+          elements.enableCookies.classList.add("enabled");
+        } else {
+          elements.enableCookies.classList.remove("enabled");
+        }
+      }
+      if (elements.autoCookies) {
+        if (rule.cookies?.auto !== false) {
+          elements.autoCookies.classList.add("enabled");
+        } else {
+          elements.autoCookies.classList.remove("enabled");
+        }
+      }
       if (elements.cookieSettings) {
         elements.cookieSettings.style.display =
-          elements.enableCookies && elements.enableCookies.checked
+          elements.enableCookies && elements.enableCookies.classList.contains("enabled")
             ? "block"
             : "none";
       }
@@ -410,8 +429,12 @@ function openRuleEditor(ruleId = null) {
       if (elements.targetUrl) elements.targetUrl.value = "";
       if (elements.ruleMethod) elements.ruleMethod.value = "ALL";
       if (elements.ruleDesc) elements.ruleDesc.value = "";
-      if (elements.enableCookies) elements.enableCookies.checked = true;
-      if (elements.autoCookies) elements.autoCookies.checked = true;
+      if (elements.enableCookies) {
+        elements.enableCookies.classList.add("enabled");
+      }
+      if (elements.autoCookies) {
+        elements.autoCookies.classList.add("enabled");
+      }
       if (elements.cookieSettings)
         elements.cookieSettings.style.display = "block";
       currentEditingHeaders = [];
@@ -439,10 +462,8 @@ function openRuleEditor(ruleId = null) {
       
       console.log("Rule editor opened successfully");
     } else {
-      console.error("Rule editor element not found");
     }
   } catch (error) {
-    console.error("Error opening rule editor:", error);
   }
 }
 
@@ -464,8 +485,8 @@ async function saveRule() {
   const targetUrl = elements.targetUrl.value.trim();
   const method = elements.ruleMethod.value;
   const description = elements.ruleDesc.value.trim();
-  const enableCookies = elements.enableCookies.checked;
-  const autoCookies = elements.autoCookies.checked;
+  const enableCookies = elements.enableCookies.classList.contains("enabled");
+  const autoCookies = elements.autoCookies.classList.contains("enabled");
 
   // 验证
   if (!name || !sourcePattern || !targetUrl) {
@@ -666,7 +687,7 @@ async function loadCookiesForRule() {
   const rule = rules.find((r) => r.id === currentEditingRuleId);
   if (!rule) return;
 
-  // 获取 Cookies
+  // 获取所有 Cookies
   chrome.runtime.sendMessage(
     {
       type: "GET_COOKIES_FOR_RULE",
@@ -675,9 +696,7 @@ async function loadCookiesForRule() {
     (response) => {
       if (response.success) {
         const cookies = response.cookies;
-
-        // 分离自动和手动 Cookies
-        // 这里简化处理，实际上应该从后台脚本分离
+        // 渲染所有 cookies 到 textarea
         renderCookiesList(cookies);
       }
     }
@@ -685,76 +704,59 @@ async function loadCookiesForRule() {
 }
 
 function renderCookiesList(cookies) {
-  elements.autoCookiesList.innerHTML = "";
-  elements.manualCookiesList.innerHTML = "";
+  // 将所有 cookies 格式化为 textarea 格式
+  const cookieText = Object.entries(cookies)
+    .map(([name, value]) => `${name}=${value}`)
+    .join('; ');
 
-  // 渲染所有 Cookies（这里简化处理）
-  Object.entries(cookies).forEach(([name, value]) => {
-    const item = document.createElement("div");
-    item.className = "cookie-item";
-    item.dataset.cookieName = name; // 添加 data 属性
-    item.innerHTML = `
-            <div class="cookie-name">${escapeHtml(name)}</div>
-            <div class="cookie-value">${escapeHtml(
-              String(value).substring(0, 30)
-            )}...</div>
-            <button data-action="delete-cookie">删除</button>
-        `;
-    elements.autoCookiesList.appendChild(item);
-  });
-
-  if (Object.keys(cookies).length === 0) {
-    elements.noAutoCookies.style.display = "block";
-  } else {
-    elements.noAutoCookies.style.display = "none";
-  }
-
-  // 设置事件委托
-  setupCookiesEventDelegation();
+  // 设置到 textarea 中
+  elements.cookieTextarea.value = cookieText;
 }
 
-function setupCookiesEventDelegation() {
-  if (!elements.autoCookiesList) return;
-
-  elements.autoCookiesList.removeEventListener("click", handleCookieAction);
-  elements.autoCookiesList.addEventListener("click", handleCookieAction);
-}
-
-function handleCookieAction(e) {
-  const button = e.target.closest('button[data-action="delete-cookie"]');
-  if (!button) return;
-
-  const cookieItem = button.closest(".cookie-item");
-  if (!cookieItem) return;
-
-  const name = cookieItem.dataset.cookieName;
-  console.log("Delete cookie:", name);
-  deleteCookie(name);
-}
+// 移除了setupCookiesEventDelegation和handleCookieAction函数，因为不再需要单个cookie操作
 
 async function addManualCookie() {
-  const name = elements.cookieName.value.trim();
-  const value = elements.cookieValue.value.trim();
+  const cookieText = elements.cookieTextarea.value.trim();
 
-  if (!name || !value) {
-    alert("请输入 Cookie 名称和值");
+  if (!cookieText) {
+    alert("请输入 Cookie 内容");
     return;
   }
 
+  // 解析 cookie 文本，格式：key1=value1; key2=value2;
+  const cookieLines = cookieText.split(';');
+  const cookies = {};
+
+  for (const line of cookieLines) {
+    const trimmedLine = line.trim();
+    if (!trimmedLine) continue;
+
+    const [name, ...valueParts] = trimmedLine.split('=');
+    const trimmedName = name.trim();
+    const value = valueParts.join('=').trim();
+
+    if (trimmedName && value) {
+      cookies[trimmedName] = value;
+    }
+  }
+
+  if (Object.keys(cookies).length === 0) {
+    alert("请输入有效的 Cookie 格式，例如：key1=value1; key2=value2;");
+    return;
+  }
+
+  // 使用新的批量设置 cookie 方法
   chrome.runtime.sendMessage(
     {
-      type: "ADD_MANUAL_COOKIE",
+      type: "SET_MANUAL_COOKIES",
       data: {
         ruleId: currentEditingRuleId,
-        name,
-        value,
-        options: {},
+        cookies: cookies
       },
     },
     (response) => {
       if (response.success) {
-        elements.cookieName.value = "";
-        elements.cookieValue.value = "";
+        elements.cookieTextarea.value = "";
         loadCookiesForRule();
       }
     }
@@ -792,7 +794,7 @@ async function refreshCookies() {
     },
     (response) => {
       if (response.success) {
-        alert("Cookie 已刷新");
+        // 刷新成功后重新加载 cookies 到 textarea
         loadCookiesForRule();
       } else {
         alert("刷新 Cookie 失败: " + response.error);
@@ -1257,6 +1259,16 @@ function loadSettings() {
       elements.autoClearLogs.checked = settings.autoClearLogs !== false;
     }
 
+    // 加载全局启用设置
+    if (elements.globalEnable) {
+      elements.globalEnable.checked = settings.globalEnable !== false;
+    }
+
+    // 加载允许的域名设置
+    if (elements.allowedDomains) {
+      elements.allowedDomains.value = settings.allowedDomains || '*';
+    }
+
     // 监听设置变化
     if (elements.fallbackToOrigin) {
       elements.fallbackToOrigin.addEventListener("change", saveSettings);
@@ -1267,6 +1279,13 @@ function loadSettings() {
     if (elements.autoClearLogs) {
       elements.autoClearLogs.addEventListener("change", saveSettings);
     }
+    if (elements.globalEnable) {
+      elements.globalEnable.addEventListener("change", saveSettings);
+    }
+    if (elements.allowedDomains) {
+      elements.allowedDomains.addEventListener("change", saveSettings);
+      elements.allowedDomains.addEventListener("input", saveSettings);
+    }
   });
 }
 
@@ -1275,6 +1294,8 @@ function saveSettings() {
     fallbackToOrigin: elements.fallbackToOrigin?.checked ?? true,
     maxLogs: parseInt(elements.maxLogs?.value || 2000),
     autoClearLogs: elements.autoClearLogs?.checked ?? true,
+    globalEnable: elements.globalEnable?.checked ?? true,
+    allowedDomains: elements.allowedDomains?.value || ''
   };
 
   chrome.storage.local.set({ settings });

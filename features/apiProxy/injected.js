@@ -90,7 +90,6 @@ window.fetch = function(...args) {
             response = new Response(responseBody, responseInit);
             // 代理响应已注入
           } catch (e) {
-            console.error('⚠️ Fetch 创建响应失败');
             // 如果创建失败，尝试不带 headers
             response = new Response(responseBody, { 
               status: data.status, 
@@ -110,7 +109,6 @@ window.fetch = function(...args) {
         if (window.removeEventListener) {
           window.removeEventListener('message', responseListener);
         }
-        console.warn('⏱️ Fetch 超时');
         // 超时则执行原始请求
         originalFetch.apply(window, args)
           .then(resolve)
@@ -188,7 +186,6 @@ XHRPrototype.send = function(body) {
       try {
         originalOnReadyStateChange.call(this);
       } catch (e) {
-        console.error('⚠️ XHR onreadystatechange 错误');
       }
     }
   };
@@ -280,7 +277,6 @@ XHRPrototype.send = function(body) {
                 }
               }, 20);
             } catch (error) {
-              console.error('⚠️ XHR 注入错误响应失败');
             }
           }
           return;
@@ -321,7 +317,6 @@ XHRPrototype.send = function(body) {
               try {
                 xhr.onreadystatechange({ type: 'readystatechange', target: xhr });
               } catch (e) {
-                console.error('⚠️ XHR onreadystatechange 失败');
               }
             }
           }, 10);
@@ -331,24 +326,20 @@ XHRPrototype.send = function(body) {
               try {
                 xhr.onreadystatechange({ type: 'readystatechange', target: xhr });
               } catch (e) {
-                console.error('⚠️ XHR 最终状态失败');
               }
             }
             if (xhr.onload) {
               try {
                 xhr.onload({ type: 'load', target: xhr });
               } catch (e) {
-                console.error('⚠️ XHR onload 失败');
               }
             }
             try {
               xhr.dispatchEvent(new ProgressEvent('loadend'));
             } catch (e) {
-              console.error('⚠️ XHR loadend 失败');
             }
           }, 20);
         } catch (error) {
-          console.error('⚠️ XHR 注入代理响应失败');
         }
       }
     };

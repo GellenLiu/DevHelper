@@ -94,69 +94,49 @@ class RuleManager {
 
   matchRule(url, method = 'GET') {
     const urlLower = (url || '').toString().toLowerCase();
-    console.log('[RuleManager] Matching URL:', urlLower, 'Method:', method);
     for (const rule of this.rules) {
       if (!rule.enabled) {
-        console.log('[RuleManager] Skipping disabled rule:', rule.name);
         continue;
       }
 
       if (rule.method !== 'ALL' && rule.method !== method.toUpperCase()) {
-        console.log('[RuleManager] Method mismatch:', rule.method, '!==', method.toUpperCase());
         continue;
       }
 
       const patternRaw = (rule.sourcePattern || '').toString().trim();
       if (!patternRaw) {
-        console.log('[RuleManager] Empty pattern, skipping rule:', rule.name);
         continue;
       }
       
-      console.log('[RuleManager] Checking rule:', rule.name, 'Pattern:', patternRaw, 'Enabled:', rule.enabled);
       
       // 方法1：精确匹配 - 检查请求URL是否以源模式开头
       const prefix = patternRaw.toLowerCase();
-      console.log('[RuleManager] Method 1 - Prefix matching:', prefix, 'against URL:', urlLower);
       if (urlLower.startsWith(prefix)) {
-        console.log('[RuleManager] Rule matched (prefix):', rule.name);
         return rule;
       }
       
       // 方法2：URL对象匹配 - 检查域名是否匹配
       try {
-        console.log('[RuleManager] Method 2 - URL object matching');
         const sourceUrl = new URL(patternRaw);
         const requestUrl = new URL(url);
-        
-        console.log('[RuleManager] Source URL:', sourceUrl);
-        console.log('[RuleManager] Request URL:', requestUrl);
-        console.log('[RuleManager] Protocol match:', sourceUrl.protocol === requestUrl.protocol);
-        console.log('[RuleManager] Hostname match:', sourceUrl.hostname === requestUrl.hostname);
-        
         // 如果源和目标的协议、域名都匹配，直接返回规则
         if (sourceUrl.protocol === requestUrl.protocol && sourceUrl.hostname === requestUrl.hostname) {
-          console.log('[RuleManager] Rule matched (domain):', rule.name);
           return rule;
         }
       } catch (error) {
-        console.log('[RuleManager] URL parsing error:', error.message);
       }
       
       // 方法3：正则表达式匹配
       if (patternRaw.startsWith('/') && patternRaw.endsWith('/')) {
-        console.log('[RuleManager] Method 3 - Regex matching');
         // 正则表达式匹配
         const inner = patternRaw.slice(1, -1);
         const urlPattern = new RegExp(inner, 'i');
         if (urlPattern.test(url)) {
-          console.log('[RuleManager] Rule matched (regex):', rule.name);
           return rule;
         }
       }
       
-      console.log('[RuleManager] Rule not matched:', rule.name);
     }
-    console.log('[RuleManager] No rule matched for URL:', urlLower);
     return null;
   }
 
@@ -165,7 +145,6 @@ class RuleManager {
       let targetUrl;
       const pattern = rule.sourcePattern;
       
-      console.log('[RuleManager] Calculating target URL for:', sourceUrl, 'using pattern:', pattern, 'target:', rule.targetUrl);
       
       // 检查是否为正则表达式格式（以/开头和结尾）
       if (pattern.startsWith('/') && pattern.endsWith('/')) {
@@ -191,10 +170,8 @@ class RuleManager {
         }
       }
       
-      console.log('[RuleManager] Calculated target URL:', targetUrl);
       return targetUrl;
     } catch (error) {
-      console.error('Error calculating target URL:', error);
       return sourceUrl;
     }
   }
@@ -228,24 +205,29 @@ class CookieManager {
       });
       return result;
     } catch (error) {
-      console.error('Failed to get cookies for URL:', url, error);
       return {};
     }
   }
 
-  async getCookiesForRule(ruleId, targetUrl) {
+  async getCookiesForRule(ruleId, targetUrl, rule) {
     const manualCookies = await this._getManualCookies(ruleId);
+    
+    // 判断是否启用自动收集cookie
+    const isAutoEnabled = rule?.cookies?.auto !== false;
 
     let autoCookies = {};
-    try {
-      autoCookies = await this.getUrlCookies(targetUrl);
-      await this._saveAutoCookies(ruleId, autoCookies);
-    } catch (error) {
-      console.error('Failed to get auto cookies:', error);
-      autoCookies = await this._getAutoCookies(ruleId);
+    if (isAutoEnabled) {
+      try {
+        autoCookies = await this.getUrlCookies(targetUrl);
+        await this._saveAutoCookies(ruleId, autoCookies);
+      } catch (error) {
+        autoCookies = await this._getAutoCookies(ruleId);
+      }
     }
 
-    const merged = { ...autoCookies, ...manualCookies };
+    // 如果启用自动收集，则融合自动和手动cookie，手动cookie优先级更高
+    // 如果禁用自动收集，则只使用手动cookie
+    const merged = isAutoEnabled ? { ...autoCookies, ...manualCookies } : manualCookies;
     return merged;
   }
 
@@ -267,6 +249,28 @@ class CookieManager {
     };
 
     await chrome.storage.local.set({ [this.manualCookiesKey]: cookies });
+  }
+
+  async setManualCookies(ruleId, cookies) {
+    const manualCookies = await chrome.storage.local.get(this.manualCookiesKey);
+    const allManualCookies = manualCookies[this.manualCookiesKey] || {};
+
+    // 清空该规则下的所有手动 cookie
+    allManualCookies[ruleId] = {};
+
+    // 添加新的 cookie
+    for (const [name, value] of Object.entries(cookies)) {
+      allManualCookies[ruleId][name] = {
+        value: value,
+        domain: '',
+        path: '/',
+        secure: false,
+        httpOnly: false,
+        sameSite: 'Lax'
+      };
+    }
+
+    await chrome.storage.local.set({ [this.manualCookiesKey]: allManualCookies });
   }
 
   async deleteManualCookie(ruleId, name) {
@@ -318,7 +322,6 @@ class CookieManager {
       await this._saveAutoCookies(ruleId, cookies);
       return cookies;
     } catch (error) {
-      console.error('Failed to refresh cookies:', error);
       throw error;
     }
   }
@@ -495,9 +498,7 @@ let logger;
     logger = new Logger();
     await logger.initialize();
 
-    console.log('API Proxy Service Worker initialized successfully');
   } catch (error) {
-    console.error('Failed to initialize API Proxy Service Worker:', error);
   }
 })();
 
@@ -505,7 +506,6 @@ let logger;
  * 监听来自 content script 的消息
  */
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    console.log('[Background] Received message:', request);    
   // 使用异步处理
   handleMessage(request, sender, sendResponse);
   return true; // 保持通道开放以支持异步响应
@@ -517,7 +517,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 async function handleMessage(request, sender, sendResponse) {
   try {
     const { type, data, tabUrl } = request;
-    console.log('handleMessage type:', type, 'data:', data);
 
     if (type === 'INTERCEPT_REQUEST') {
       await handleInterceptRequest(data, tabUrl, sendResponse);
@@ -547,10 +546,15 @@ async function handleMessage(request, sender, sendResponse) {
       const logs = await logger.searchLogs(data.keyword, data.options);
       sendResponse({ success: true, logs });
     } else if (type === 'GET_COOKIES_FOR_RULE') {
-      const cookies = await cookieManager.getCookiesForRule(data.ruleId, data.targetUrl);
+      // 获取规则信息
+      const rule = await ruleManager.getRule(data.ruleId);
+      const cookies = await cookieManager.getCookiesForRule(data.ruleId, data.targetUrl, rule);
       sendResponse({ success: true, cookies });
     } else if (type === 'ADD_MANUAL_COOKIE') {
       await cookieManager.addManualCookie(data.ruleId, data.name, data.value, data.options);
+      sendResponse({ success: true });
+    } else if (type === 'SET_MANUAL_COOKIES') {
+      await cookieManager.setManualCookies(data.ruleId, data.cookies);
       sendResponse({ success: true });
     } else if (type === 'DELETE_MANUAL_COOKIE') {
       await cookieManager.deleteManualCookie(data.ruleId, data.name);
@@ -566,7 +570,6 @@ async function handleMessage(request, sender, sendResponse) {
       sendResponse({ success: false, error: 'Unknown message type' });
     }
   } catch (error) {
-    console.error('Error handling message:', error);
     sendResponse({ success: false, error: error.message });
   }
 }
@@ -576,7 +579,6 @@ async function handleMessage(request, sender, sendResponse) {
  */
 async function handleInterceptRequest(data, tabUrl, sendResponse) {
   try {
-    console.log('[Background] Matching rule for URL:', data.url, 'Method:', data.method);
 
     const startTime = Date.now();  // 记录开始时间
     // 获取 fallback 设置（默认 true）并随响应回传给 content-script
@@ -585,11 +587,9 @@ async function handleInterceptRequest(data, tabUrl, sendResponse) {
     
     // 获取所有规则，用于调试
     const allRules = await ruleManager.getRules();
-    console.log('[Background] All rules:', allRules);
     
     // 尝试匹配规则
     const rule = ruleManager.matchRule(data.url, data.method);
-    console.log('[Background] Matched rule:', rule);
     
     if (!rule) {
       // 没有匹配的规则，直接返回，不记录日志
@@ -619,10 +619,8 @@ async function handleInterceptRequest(data, tabUrl, sendResponse) {
     let cookies = {};
     if (rule.cookies && rule.cookies.enabled) {
       try {
-        cookies = await cookieManager.getCookiesForRule(rule.id, targetUrl);
-        console.log('[Background] Got cookies for target URL:', targetUrl, 'Cookies:', cookies);
+        cookies = await cookieManager.getCookiesForRule(rule.id, targetUrl, rule);
       } catch (error) {
-        console.error('[Background] Failed to get cookies:', error);
       }
     }
 
@@ -650,19 +648,11 @@ async function handleInterceptRequest(data, tabUrl, sendResponse) {
       forwardOptions.body = data.body;
     }
 
-    console.log('[Background] Forward options:', JSON.stringify({
-      url: targetUrl,
-      method: forwardOptions.method,
-      headers: forwardOptions.headers,
-      hasBody: !!forwardOptions.body
-    }, null, 2));
-
     // 执行转发请求
     let response;
     try {
       response = await fetch(targetUrl, forwardOptions);
     } catch (fetchError) {
-      console.error('[Background] Fetch failed for rule:', rule?.id, rule?.name, 'targetUrl:', targetUrl, 'error:', fetchError);
       // 记录错误日志并直接返回给 content-script，避免抛出异常中断流程
       await logger.addErrorLog({
         url: data.url,
@@ -683,7 +673,6 @@ async function handleInterceptRequest(data, tabUrl, sendResponse) {
     }
     
     const duration = Date.now() - startTime;  // 计算耗时
-    console.log('[Background] Got response status:', response.status, 'statusText:', response.statusText, 'duration:', duration, 'ms');
 
     // 获取响应数据
     const contentType = response.headers.get('content-type');
@@ -724,10 +713,8 @@ async function handleInterceptRequest(data, tabUrl, sendResponse) {
       ok: response.ok
     };
 
-    console.log('[Background] Sending back response for ID:', data.id, 'status:', responseObj.status);
     sendResponse({ success: true, matched: true, response: responseObj, fallbackToOrigin });
   } catch (error) {
-    console.error('[Background] Error forwarding request:', error);
 
     // 计算目标 URL 以便记录
     let targetUrl = data.url;
@@ -763,7 +750,6 @@ async function handleInterceptResponse(data, sendResponse) {
     // 响应已经在 handleInterceptRequest 中处理过了
     sendResponse({ success: true });
   } catch (error) {
-    console.error('Error handling response:', error);
     sendResponse({ success: false, error: error.message });
   }
 }
@@ -781,7 +767,6 @@ async function handleInterceptError(data, sendResponse) {
 
     sendResponse({ success: true });
   } catch (error) {
-    console.error('Error handling error log:', error);
     sendResponse({ success: false, error: error.message });
   }
 }
