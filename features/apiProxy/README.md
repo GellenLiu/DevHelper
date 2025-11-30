@@ -13,6 +13,18 @@
 5. **完整的日志系统** - 记录所有请求和响应，支持搜索、过滤和导出
 6. **数据导入导出** - 支持备份和导入规则配置
 
+## 📷 功能截图
+
+<div align="center">
+  <img src="./assets/demo1.png" alt="API Proxy 规则配置界面" width="600">
+  <p align="center" style="font-size: 0.8em; margin-top: 0.5em;">API Proxy 规则配置界面</p>
+</div>
+
+<div align="center" style="margin-top: 20px;">
+  <img src="./assets/demo2.png" alt="API Proxy 日志查看界面" width="600">
+  <p align="center" style="font-size: 0.8em; margin-top: 0.5em;">API Proxy 日志查看界面</p>
+</div>
+
 ## 安装方式
 
 ### 方法1：手动加载（开发者模式）
