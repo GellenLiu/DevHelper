@@ -1,6 +1,6 @@
 # Dev Helper - 让开发更高效，让工作更轻松
 
-🚀 一站式前端开发提效浏览器扩展工具套件，集成多种自研实用工具，助力开发者解决日常开发中的各类痛点问题，显著提升开发效率。
+一站式前端开发提效浏览器扩展工具套件，集成多种自研实用工具，助力开发者解决日常开发中的各类痛点问题，显著提升开发效率🚀 。
 
 ## 🌟 核心优势
 
@@ -8,7 +8,6 @@
 - **模块化架构**：每个工具独立封装，支持按需加载，便于扩展和定制
 - **开源协作**：完全开源，欢迎社区贡献，持续迭代优化
 - **浏览器原生支持**：基于Chrome扩展开发，无需额外安装依赖，开箱即用
-- **轻量高效**：优化的性能设计，最小化对浏览器的资源占用
 
 ## 🛠️ 项目自研工具列表
 
@@ -17,7 +16,7 @@
 - **[API Proxy 接口代理转发工具](./features/apiProxy/README.md)** - 强大的接口代理工具，支持请求拦截、修改、重定向和Mock数据，轻松处理复杂的接口测试场景
 - **[Env Configurator 环境配置修改器](./features/env-configurator/README.md)** - 智能环境配置管理工具，支持动态切换和修改环境变量，无需重新构建即可切换开发/测试/生产环境
 - **[JS Error Monitor 前端稳定性JS错误监控](./features/js-error-monitor/readme.md)** - 实时JavaScript错误监控系统，捕获页面运行时错误，提供详细的错误堆栈和上下文信息，便于快速定位问题
-- **[MateChat 个人智能助手](./features/matechat/readme.md)** - 集成AI能力的智能开发助手，提供代码解释、问题解答、代码生成等功能，辅助开发者解决技术难题
+- **[MateChat 个人智能对话助手](./features/matechat/readme.md)** - 智能对话助手扩展，支持直连LLM
 
 ## 📦 其他常用Chrome扩展推荐
 
@@ -66,7 +65,7 @@ cd DevHelper
 
 本项目采用MIT许可证 - 详见[LICENSE](LICENSE)文件。
 
-## 📞 联系方式
+## 加入我们
 
 - 项目地址：[https://gitcode.com/liuguolin/DevHelper.git](https://gitcode.com/liuguolin/DevHelper.git)
 - 问题反馈：[https://gitcode.com/liuguolin/DevHelper.git/issues](https://gitcode.com/liuguolin/DevHelper.git/issues)
