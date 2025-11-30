@@ -3,7 +3,7 @@
   "background": {
     "service_worker": "src/background.js"
   },
-  "name": "DevUI Dev Helper",
+  "name": "Dev Helper",
   "version": "1.0",
   "description": "A powerful browser extension for developers with multiple helpful tools",
   "permissions": [
