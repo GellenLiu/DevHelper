@@ -31,6 +31,18 @@ Env Configurator 是一款强大的环境配置修改器，专为前端开发者
 3. 修改配置参数并保存
 4. 刷新页面，新配置将立即生效
 
+## 📷 功能截图
+
+<div align="center">
+  <img src="./assets/envConfigurator1.png" alt="Env Configurator 主界面" width="600">
+  <p align="center" style="font-size: 0.8em; margin-top: 0.5em;">Env Configurator 主界面</p>
+</div>
+
+<div align="center" style="margin-top: 2em;">
+  <img src="./assets/envConfigurator2.png" alt="Env Configurator 配置管理" width="600">
+  <p align="center" style="font-size: 0.8em; margin-top: 0.5em;">Env Configurator 配置管理界面</p>
+</div>
+
 ## 🛠️ 技术栈
 
 - Vue 3 - 前端框架

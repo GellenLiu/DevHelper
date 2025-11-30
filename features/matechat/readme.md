@@ -37,7 +37,7 @@ MateChat 是一款集成AI能力的智能开发助手，专为开发者设计，
 ## 📷 功能截图
 
 <div align="center">
-  <img src="./matechat.png" alt="MateChat 智能助手" width="600">
+  <img src="./img/matechat.png" alt="MateChat 智能助手" width="600">
   <p align="center" style="font-size: 0.8em; margin-top: 0.5em;">MateChat 智能助手主界面</p>
 </div>
 
