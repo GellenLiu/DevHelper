@@ -144,7 +144,9 @@ XHRPrototype.send = function(body) {
   const xhr = this;
   const requestId = xhr.__requestId;
   let proxyResponseReceived = false;
-  let shouldExecuteOriginal = true;
+  let originalRequestSent = false;
+  let responseListener = null;
+  let timeoutId = null;
 
   // 记录请求
   console.log('[XHR] Posting INTERCEPT_REQUEST, ID:', requestId, 'URL:', xhr.__url);
@@ -163,22 +165,12 @@ XHRPrototype.send = function(body) {
 
   // 保存原始的 onreadystatechange 处理器
   const originalOnReadyStateChange = xhr.onreadystatechange;
-  let originalResponseReceived = false;
 
   // 拦截 readystatechange - 防止原始响应覆盖代理响应
   xhr.onreadystatechange = function() {
-    // XHR 状态变化
-    
     // 如果已经收到代理响应，忽略原始响应
     if (proxyResponseReceived) {
-      // 忽略原始响应，使用代理
       return;
-    }
-    
-    // 记录原始响应完成
-    if (xhr.readyState === 4) {
-      originalResponseReceived = true;
-      // 原始响应接收
     }
     
     // 调用原始处理器
@@ -190,186 +182,172 @@ XHRPrototype.send = function(body) {
     }
   };
 
+  // 执行原始请求
+  const executeOriginalRequest = () => {
+    if (originalRequestSent) {
+      return;
+    }
+    originalRequestSent = true;
+    
+    // 清理事件监听器和超时
+    if (responseListener) {
+      window.removeEventListener('message', responseListener);
+    }
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+    
+    console.log('[XHR] Executing original request');
+    return originalSend.call(xhr, body);
+  };
 
-  // 监听来自 content script 的代理响应，支持 fallbackToOrigin 设置
-  let responseListener;
-  responseListener = (event) => {
-      if (event.source !== window) return;
-
-      const { type, data } = event.data;
-      if (type === 'FORWARD_RESPONSE' && data.id === requestId && data.from === 'content-script') {
-        window.removeEventListener('message', responseListener);
-        // 收到代理响应
-        proxyResponseReceived = true;
-
-        const fallbackToOrigin = data.fallbackToOrigin !== false;
-        if (data.error === 'NO_RULE_MATCHED') {
-          // 无规则匹配
-          shouldExecuteOriginal = true;
-          return;
-        }
-
-        if (data.error) {
-          // 代理请求失败，根据设置决定是否回源
-          if (fallbackToOrigin) {
-            console.log('代理失败，自动回源');
-            shouldExecuteOriginal = true;
-          } else {
-            console.log('代理失败，直接返回错误');
-            shouldExecuteOriginal = false;
-            // 构建错误响应
-            try {
-              Object.defineProperty(xhr, 'readyState', {
-                value: 4,
-                writable: false,
-                configurable: true
-              });
-              Object.defineProperty(xhr, 'status', {
-                value: 502,
-                writable: false,
-                configurable: true
-              });
-              Object.defineProperty(xhr, 'statusText', {
-                value: '代理失败',
-                writable: false,
-                configurable: true
-              });
-              Object.defineProperty(xhr, 'responseText', {
-                value: JSON.stringify({ error: data.error }),
-                writable: false,
-                configurable: true
-              });
-              Object.defineProperty(xhr, 'response', {
-                value: { error: data.error },
-                writable: false,
-                configurable: true
-              });
-              setTimeout(() => {
-                Object.defineProperty(xhr, 'readyState', { value: 3, writable: false, configurable: true });
-                if (xhr.onreadystatechange) {
-                  try {
-                    xhr.onreadystatechange({ type: 'readystatechange', target: xhr });
-                  } catch (e) {
-                    console.error('⚠️ XHR onreadystatechange 失败');
-                  }
-                }
-              }, 10);
-              setTimeout(() => {
-                Object.defineProperty(xhr, 'readyState', { value: 4, writable: false, configurable: true });
-                if (xhr.onreadystatechange) {
-                  try {
-                    xhr.onreadystatechange({ type: 'readystatechange', target: xhr });
-                  } catch (e) {
-                    console.error('⚠️ XHR 最终状态失败');
-                  }
-                }
-                if (xhr.onload) {
-                  try {
-                    xhr.onload({ type: 'load', target: xhr });
-                  } catch (e) {
-                    console.error('⚠️ XHR onload 失败');
-                  }
-                }
-                try {
-                  xhr.dispatchEvent(new ProgressEvent('loadend'));
-                } catch (e) {
-                  console.error('⚠️ XHR loadend 失败');
-                }
-              }, 20);
-            } catch (error) {
-            }
+  // 构建并返回代理响应
+  const buildProxyResponse = (status, statusText, responseBody, responseObj) => {
+    proxyResponseReceived = true;
+    
+    // 清理事件监听器和超时
+    if (responseListener) {
+      window.removeEventListener('message', responseListener);
+    }
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+    
+    try {
+      // 模拟 XHR 状态变化，先设置为 3（加载中），再设置为 4（完成）
+      setTimeout(() => {
+        Object.defineProperty(xhr, 'readyState', {
+          value: 3,
+          writable: false,
+          configurable: true
+        });
+        // 触发 readystatechange 事件（loading 状态）
+        if (xhr.onreadystatechange) {
+          try {
+            xhr.onreadystatechange({ type: 'readystatechange', target: xhr });
+          } catch (e) {
+            console.error('⚠️ XHR onreadystatechange (loading) failed:', e);
           }
-          return;
         }
-
-        // 有规则匹配，立即用代理响应替换 XHR 状态
-        shouldExecuteOriginal = false;
-        try {
+        
+        // 再延迟一小段时间，设置为完成状态
+        setTimeout(() => {
           Object.defineProperty(xhr, 'readyState', {
             value: 4,
             writable: false,
             configurable: true
           });
           Object.defineProperty(xhr, 'status', {
-            value: data.status,
+            value: status,
             writable: false,
             configurable: true
           });
           Object.defineProperty(xhr, 'statusText', {
-            value: data.statusText || 'OK',
+            value: statusText || 'OK',
             writable: false,
             configurable: true
           });
-          const responseBody = typeof data.body === 'string' ? data.body : JSON.stringify(data.body);
           Object.defineProperty(xhr, 'responseText', {
             value: responseBody,
             writable: false,
             configurable: true
           });
           Object.defineProperty(xhr, 'response', {
-            value: data.body,
+            value: responseObj || responseBody,
             writable: false,
             configurable: true
           });
-          setTimeout(() => {
-            Object.defineProperty(xhr, 'readyState', { value: 3, writable: false, configurable: true });
-            if (xhr.onreadystatechange) {
-              try {
-                xhr.onreadystatechange({ type: 'readystatechange', target: xhr });
-              } catch (e) {
-              }
-            }
-          }, 10);
-          setTimeout(() => {
-            Object.defineProperty(xhr, 'readyState', { value: 4, writable: false, configurable: true });
-            if (xhr.onreadystatechange) {
-              try {
-                xhr.onreadystatechange({ type: 'readystatechange', target: xhr });
-              } catch (e) {
-              }
-            }
-            if (xhr.onload) {
-              try {
-                xhr.onload({ type: 'load', target: xhr });
-              } catch (e) {
-              }
-            }
+          
+          // 触发 readystatechange 事件（完成状态）
+          if (xhr.onreadystatechange) {
             try {
-              xhr.dispatchEvent(new ProgressEvent('loadend'));
+              xhr.onreadystatechange({ type: 'readystatechange', target: xhr });
             } catch (e) {
+              console.error('⚠️ XHR onreadystatechange (done) failed:', e);
             }
-          }, 20);
-        } catch (error) {
-        }
+          }
+          
+          // 触发 onload 事件
+          if (xhr.onload) {
+            try {
+              xhr.onload({ type: 'load', target: xhr });
+            } catch (e) {
+              console.error('⚠️ XHR onload failed:', e);
+            }
+          }
+          
+          // 触发 loadend 事件
+          try {
+            xhr.dispatchEvent(new ProgressEvent('loadend'));
+          } catch (e) {
+            console.error('⚠️ XHR loadend event failed:', e);
+          }
+        }, 20);
+      }, 10);
+    } catch (error) {
+      console.error('⚠️ XHR proxy response build failed:', error);
+      // 构建失败，回退到原始请求
+      executeOriginalRequest();
+    }
+  };
+
+  // 处理代理响应
+  const handleProxyResponse = (event) => {
+    const { type, data } = event.data || {};
+    if (type !== 'FORWARD_RESPONSE' || data?.id !== requestId || data?.from !== 'content-script') {
+      return;
+    }
+    
+    const fallbackToOrigin = data.fallbackToOrigin !== false;
+    
+    if (data.error === 'NO_RULE_MATCHED') {
+      // 无规则匹配，执行原始请求
+      console.log('[XHR] No rule matched, executing original request');
+      executeOriginalRequest();
+      return;
+    }
+    
+    if (data.error) {
+      // 代理请求失败，根据设置决定是否回源
+      if (fallbackToOrigin) {
+        console.log('[XHR] Proxy failed, falling back to original request');
+        executeOriginalRequest();
+      } else {
+        console.log('[XHR] Proxy failed, returning error directly');
+        // 构建错误响应
+        const errorResponse = JSON.stringify({ error: data.error });
+        buildProxyResponse(502, 'Proxy Error', errorResponse, { error: data.error });
       }
-    };
+      return;
+    }
+    
+    // 有规则匹配，返回代理响应
+    console.log('[XHR] Proxy response received, using proxy response');
+    const responseBody = typeof data.body === 'string' ? data.body : JSON.stringify(data.body);
+    buildProxyResponse(data.status, data.statusText || 'OK', responseBody, data.body);
+  };
 
-    window.addEventListener('message', responseListener);
-    console.log('[XHR] Listening for FORWARD_RESPONSE for ID:', requestId);
+  // 监听代理响应
+  responseListener = (event) => {
+    if (event.source !== window) return;
+    handleProxyResponse(event);
+  };
 
-  // 10 秒超时
-  const timeoutId = setTimeout(() => {
+  window.addEventListener('message', responseListener);
+  console.log('[XHR] Listening for FORWARD_RESPONSE for ID:', requestId);
+
+  // 10 秒超时处理
+  timeoutId = setTimeout(() => {
     if (!proxyResponseReceived) {
-      console.log('[XHR] Timeout waiting for proxy response, ID:', requestId);
-      window.removeEventListener('message', responseListener);
-      shouldExecuteOriginal = true;
+      console.log('[XHR] Timeout waiting for proxy response, executing original request');
+      executeOriginalRequest();
     }
   }, 10000);
 
-  // 只有在没有收到代理响应或者代理响应指示需要回源时，才执行原始请求
-  if (shouldExecuteOriginal) {
-    console.log('[XHR] Executing original request');
-    return originalSend.call(xhr, body);
-  } else {
-    // 已经有代理响应，不需要执行原始请求
-    console.log('[XHR] Using proxy response, skipping original request');
-    return undefined;
-  }
+  // 初始状态下，不立即执行原始请求，等待代理响应
+  // 只有在代理响应失败、超时或无规则匹配时，才会执行原始请求
 };
 
-// 不需要额外的 message listener，因为 Fetch 和 XHR 都直接监听 FORWARD_RESPONSE
-
-console.log('Injected script loaded and hooks installed');
 // 向 content script 发送加载完成的通知，便于建立握手
 try {
   window.postMessage({ type: 'INJECTED_LOADED', from: 'injected' }, '*');

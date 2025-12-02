@@ -9,7 +9,13 @@ let handshakeReceived = false;
 
 // 检查域名是否在允许列表中
 function isDomainAllowed(domain, allowedDomains) {
-  if (!allowedDomains || allowedDomains.trim() === '') {
+  // 当 allowedDomains 为 undefined 或 null 时，使用默认值 '*'
+  // 当 allowedDomains 为空字符串或只包含空白字符时，返回 false
+  if (allowedDomains === undefined || allowedDomains === null) {
+    allowedDomains = '*';
+  }
+  
+  if (allowedDomains.trim() === '') {
     return false; // 空列表表示所有页面都不启用
   }
 
