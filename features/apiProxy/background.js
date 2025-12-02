@@ -95,8 +95,22 @@ class RuleManager {
     return this.updateRule(id, { enabled: false });
   }
 
-  matchRule(url, method = 'GET') {
-    const urlLower = (url || '').toString().toLowerCase();
+  matchRule(url, method = 'GET', tabUrl = '') {
+    let fullUrl = url;
+    // 处理相对路径
+    if (url && !url.startsWith('http')) {
+      try {
+        // 如果提供了tabUrl，使用它来构建完整URL
+        if (tabUrl && tabUrl.startsWith('http')) {
+          const baseUrl = new URL(tabUrl);
+          fullUrl = new URL(url, baseUrl.origin).href;
+        }
+      } catch (error) {
+        console.error('Error constructing full URL:', error);
+      }
+    }
+    
+    const urlLower = (fullUrl || '').toString().toLowerCase();
     for (const rule of this.rules) {
       if (!rule.enabled) {
         continue;
@@ -111,7 +125,6 @@ class RuleManager {
         continue;
       }
       
-      
       // 方法1：精确匹配 - 检查请求URL是否以源模式开头
       const prefix = patternRaw.toLowerCase();
       if (urlLower.startsWith(prefix)) {
@@ -121,7 +134,7 @@ class RuleManager {
       // 方法2：URL对象匹配 - 检查域名是否匹配
       try {
         const sourceUrl = new URL(patternRaw);
-        const requestUrl = new URL(url);
+        const requestUrl = new URL(fullUrl);
         // 如果源和目标的协议、域名都匹配，直接返回规则
         if (sourceUrl.protocol === requestUrl.protocol && sourceUrl.hostname === requestUrl.hostname) {
           return rule;
@@ -134,7 +147,7 @@ class RuleManager {
         // 正则表达式匹配
         const inner = patternRaw.slice(1, -1);
         const urlPattern = new RegExp(inner, 'i');
-        if (urlPattern.test(url)) {
+        if (urlPattern.test(fullUrl)) {
           return rule;
         }
       }
@@ -148,7 +161,6 @@ class RuleManager {
       let targetUrl;
       const pattern = rule.sourcePattern;
       
-      
       // 检查是否为正则表达式格式（以/开头和结尾）
       if (pattern.startsWith('/') && pattern.endsWith('/')) {
         // 正则表达式替换
@@ -157,12 +169,20 @@ class RuleManager {
       } else {
         // 处理完整域名替换
         try {
-          const sourceUrlObj = new URL(sourceUrl);
-          const patternUrlObj = new URL(pattern);
+          // 解析目标URL，确保它是完整的
           const targetUrlObj = new URL(rule.targetUrl);
           
-          // 替换域名，保留路径和查询参数
-          targetUrl = sourceUrl.replace(patternUrlObj.origin, targetUrlObj.origin);
+          // 检查sourceUrl是否为完整URL
+          try {
+            const sourceUrlObj = new URL(sourceUrl);
+            const patternUrlObj = new URL(pattern);
+            
+            // 替换域名，保留路径和查询参数
+            targetUrl = sourceUrl.replace(patternUrlObj.origin, targetUrlObj.origin);
+          } catch (sourceUrlError) {
+            // sourceUrl是相对路径，直接使用目标URL的origin加上相对路径
+            targetUrl = new URL(sourceUrl, targetUrlObj.origin).href;
+          }
         } catch (urlError) {
           // 简单字符串替换（前缀匹配）
           if (sourceUrl.startsWith(pattern)) {
@@ -175,6 +195,7 @@ class RuleManager {
       
       return targetUrl;
     } catch (error) {
+      console.error('Error calculating target URL:', error);
       return sourceUrl;
     }
   }
@@ -591,8 +612,8 @@ async function handleInterceptRequest(data, tabUrl, sendResponse) {
     // 获取所有规则，用于调试
     const allRules = await ruleManager.getRules();
     
-    // 尝试匹配规则
-    const rule = ruleManager.matchRule(data.url, data.method);
+    // 尝试匹配规则，传递tabUrl以处理相对路径
+    const rule = ruleManager.matchRule(data.url, data.method, tabUrl);
     
     if (!rule) {
       // 没有匹配的规则，直接返回，不记录日志
@@ -721,7 +742,7 @@ async function handleInterceptRequest(data, tabUrl, sendResponse) {
 
     // 计算目标 URL 以便记录
     let targetUrl = data.url;
-    const rule = ruleManager.matchRule(data.url, data.method);
+    const rule = ruleManager.matchRule(data.url, data.method, tabUrl);
     if (rule) {
       targetUrl = ruleManager.calculateTargetUrl(data.url, rule);
     }

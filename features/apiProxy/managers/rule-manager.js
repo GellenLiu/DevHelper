@@ -134,8 +134,22 @@ class RuleManager {
    * @param {string} method - 请求方法
    * @returns {Object|null} 匹配的规则或 null
    */
-  matchRule(url, method = 'GET') {
-    const urlLower = (url || '').toString().toLowerCase();
+  matchRule(url, method = 'GET', tabUrl = '') {
+    let fullUrl = url;
+    // 处理相对路径
+    if (url && !url.startsWith('http')) {
+      try {
+        // 如果提供了tabUrl，使用它来构建完整URL
+        if (tabUrl && tabUrl.startsWith('http')) {
+          const baseUrl = new URL(tabUrl);
+          fullUrl = new URL(url, baseUrl.origin).href;
+        }
+      } catch (error) {
+        console.error('Error constructing full URL:', error);
+      }
+    }
+    
+    const urlLower = (fullUrl || '').toString().toLowerCase();
     for (const rule of this.rules) {
       if (!rule.enabled) continue;
 
@@ -153,7 +167,7 @@ class RuleManager {
           // 正则表达式
           const inner = patternRaw.slice(1, -1);
           const urlPattern = new RegExp(inner, 'i');
-          if (urlPattern.test(url)) {
+          if (urlPattern.test(fullUrl)) {
             return rule;
           }
         } else {
@@ -178,8 +192,41 @@ class RuleManager {
    */
   calculateTargetUrl(sourceUrl, rule) {
     try {
-      const urlPattern = new RegExp(rule.sourcePattern, 'i');
-      let targetUrl = sourceUrl.replace(urlPattern, rule.targetUrl);
+      let targetUrl;
+      const pattern = rule.sourcePattern;
+      
+      // 检查是否为正则表达式格式（以/开头和结尾）
+      if (pattern.startsWith('/') && pattern.endsWith('/')) {
+        // 正则表达式替换
+        const regex = new RegExp(pattern.slice(1, -1), 'i');
+        targetUrl = sourceUrl.replace(regex, rule.targetUrl);
+      } else {
+        // 处理完整域名替换
+        try {
+          // 解析目标URL，确保它是完整的
+          const targetUrlObj = new URL(rule.targetUrl);
+          
+          // 检查sourceUrl是否为完整URL
+          try {
+            const sourceUrlObj = new URL(sourceUrl);
+            const patternUrlObj = new URL(pattern);
+            
+            // 替换域名，保留路径和查询参数
+            targetUrl = sourceUrl.replace(patternUrlObj.origin, targetUrlObj.origin);
+          } catch (sourceUrlError) {
+            // sourceUrl是相对路径，直接使用目标URL的origin加上相对路径
+            targetUrl = new URL(sourceUrl, targetUrlObj.origin).href;
+          }
+        } catch (urlError) {
+          // 简单字符串替换（前缀匹配）
+          if (sourceUrl.startsWith(pattern)) {
+            targetUrl = rule.targetUrl + sourceUrl.slice(pattern.length);
+          } else {
+            targetUrl = sourceUrl;
+          }
+        }
+      }
+      
       return targetUrl;
     } catch (error) {
       console.error('Error calculating target URL:', error);
