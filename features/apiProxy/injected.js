@@ -214,75 +214,174 @@ XHRPrototype.send = function(body) {
     }
     
     try {
-      // 模拟 XHR 状态变化，先设置为 3（加载中），再设置为 4（完成）
-      setTimeout(() => {
-        Object.defineProperty(xhr, 'readyState', {
-          value: 3,
+      // 1. 先设置所有必要的 XHR 属性
+      // 注意：这里需要按照 XHR 规范的顺序设置属性
+      
+      // 设置 responseURL（如果有）
+      if (xhr.__url) {
+        Object.defineProperty(xhr, 'responseURL', {
+          value: xhr.__url,
           writable: false,
           configurable: true
         });
-        // 触发 readystatechange 事件（loading 状态）
+      }
+      
+      // 设置 status 和 statusText
+      Object.defineProperty(xhr, 'status', {
+        value: status,
+        writable: false,
+        configurable: true
+      });
+      Object.defineProperty(xhr, 'statusText', {
+        value: statusText || 'OK',
+        writable: false,
+        configurable: true
+      });
+      
+      // 设置 responseType 为 text（默认值）
+      Object.defineProperty(xhr, 'responseType', {
+        value: 'text',
+        writable: false,
+        configurable: true
+      });
+      
+      // 设置 response 和 responseText
+      Object.defineProperty(xhr, 'responseText', {
+        value: responseBody,
+        writable: false,
+        configurable: true
+      });
+      Object.defineProperty(xhr, 'response', {
+        value: responseObj || responseBody,
+        writable: false,
+        configurable: true
+      });
+      
+      // 设置 responseXML（如果响应是 XML）
+      if (responseBody && responseBody.startsWith('<?xml')) {
+        try {
+          const parser = new DOMParser();
+          const xmlDoc = parser.parseFromString(responseBody, 'text/xml');
+          Object.defineProperty(xhr, 'responseXML', {
+            value: xmlDoc,
+            writable: false,
+            configurable: true
+          });
+        } catch (e) {
+          // 如果解析失败，设置为 null
+          Object.defineProperty(xhr, 'responseXML', {
+            value: null,
+            writable: false,
+            configurable: true
+          });
+        }
+      } else {
+        Object.defineProperty(xhr, 'responseXML', {
+          value: null,
+          writable: false,
+          configurable: true
+        });
+      }
+      
+      // 设置 readyState 为 3（加载中）
+      Object.defineProperty(xhr, 'readyState', {
+        value: 3,
+        writable: false,
+        configurable: true
+      });
+      
+      // 2. 触发 readyState 3 的 readystatechange 事件
+      console.log('[XHR] Triggering readystatechange (loading state)');
+      // 先触发 onreadystatechange 属性
+      if (xhr.onreadystatechange) {
+        try {
+          xhr.onreadystatechange.call(xhr);
+        } catch (e) {
+          console.error('⚠️ XHR onreadystatechange (loading) failed:', e);
+        }
+      }
+      // 再触发通过 addEventListener 添加的 readystatechange 事件
+      try {
+        xhr.dispatchEvent(new Event('readystatechange'));
+      } catch (e) {
+        console.error('⚠️ XHR dispatch readystatechange (loading) failed:', e);
+      }
+      
+      // 3. 延迟一小段时间，设置 readyState 为 4（完成）
+      setTimeout(() => {
+        // 设置 readyState 为 4（完成）
+        Object.defineProperty(xhr, 'readyState', {
+          value: 4,
+          writable: false,
+          configurable: true
+        });
+        
+        // 4. 触发 readyState 4 的 readystatechange 事件
+        console.log('[XHR] Triggering readystatechange (done state)');
+        // 先触发 onreadystatechange 属性
         if (xhr.onreadystatechange) {
           try {
-            xhr.onreadystatechange({ type: 'readystatechange', target: xhr });
+            xhr.onreadystatechange.call(xhr);
           } catch (e) {
-            console.error('⚠️ XHR onreadystatechange (loading) failed:', e);
+            console.error('⚠️ XHR onreadystatechange (done) failed:', e);
           }
         }
+        // 再触发通过 addEventListener 添加的 readystatechange 事件
+        try {
+          xhr.dispatchEvent(new Event('readystatechange'));
+        } catch (e) {
+          console.error('⚠️ XHR dispatch readystatechange (done) failed:', e);
+        }
         
-        // 再延迟一小段时间，设置为完成状态
-        setTimeout(() => {
-          Object.defineProperty(xhr, 'readyState', {
-            value: 4,
-            writable: false,
-            configurable: true
-          });
-          Object.defineProperty(xhr, 'status', {
-            value: status,
-            writable: false,
-            configurable: true
-          });
-          Object.defineProperty(xhr, 'statusText', {
-            value: statusText || 'OK',
-            writable: false,
-            configurable: true
-          });
-          Object.defineProperty(xhr, 'responseText', {
-            value: responseBody,
-            writable: false,
-            configurable: true
-          });
-          Object.defineProperty(xhr, 'response', {
-            value: responseObj || responseBody,
-            writable: false,
-            configurable: true
-          });
-          
-          // 触发 readystatechange 事件（完成状态）
-          if (xhr.onreadystatechange) {
-            try {
-              xhr.onreadystatechange({ type: 'readystatechange', target: xhr });
-            } catch (e) {
-              console.error('⚠️ XHR onreadystatechange (done) failed:', e);
-            }
-          }
-          
-          // 触发 onload 事件
-          if (xhr.onload) {
-            try {
-              xhr.onload({ type: 'load', target: xhr });
-            } catch (e) {
-              console.error('⚠️ XHR onload failed:', e);
-            }
-          }
-          
-          // 触发 loadend 事件
+        // 5. 触发 load 事件
+        console.log('[XHR] Triggering load event');
+        // 先触发 onload 属性
+        if (xhr.onload) {
           try {
-            xhr.dispatchEvent(new ProgressEvent('loadend'));
+            xhr.onload.call(xhr);
           } catch (e) {
-            console.error('⚠️ XHR loadend event failed:', e);
+            console.error('⚠️ XHR onload failed:', e);
           }
-        }, 20);
+        }
+        // 再触发通过 addEventListener 添加的 load 事件
+        try {
+          xhr.dispatchEvent(new Event('load'));
+        } catch (e) {
+          console.error('⚠️ XHR dispatch load failed:', e);
+        }
+        
+        // 6. 触发 loadend 事件
+        console.log('[XHR] Triggering loadend event');
+        try {
+          xhr.dispatchEvent(new ProgressEvent('loadend'));
+        } catch (e) {
+          console.error('⚠️ XHR loadend event failed:', e);
+        }
+        
+        // 7. 触发其他可能的事件（根据状态）
+        // 如果请求成功（2xx），可以考虑触发其他成功相关的事件
+        if (status >= 200 && status < 300) {
+          // 例如，可以触发 onloadstart 事件（如果需要）
+          // 但通常 loadstart 是在请求开始时触发的，这里可能不需要
+        }
+        // 如果请求失败，可以考虑触发 error 事件
+        if (status >= 400) {
+          console.log('[XHR] Triggering error event for status:', status);
+          // 触发 onerror 属性
+          if (xhr.onerror) {
+            try {
+              xhr.onerror.call(xhr);
+            } catch (e) {
+              console.error('⚠️ XHR onerror failed:', e);
+            }
+          }
+          // 触发通过 addEventListener 添加的 error 事件
+          try {
+            xhr.dispatchEvent(new Event('error'));
+          } catch (e) {
+            console.error('⚠️ XHR dispatch error failed:', e);
+          }
+        }
       }, 10);
     } catch (error) {
       console.error('⚠️ XHR proxy response build failed:', error);
