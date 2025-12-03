@@ -28,7 +28,6 @@ window.fetch = function(...args) {
   };
 
   // 发送请求信息到 content script
-  console.log('[Fetch] Posting INTERCEPT_REQUEST, ID:', requestId, 'URL:', requestUrl);
   window.postMessage({
     type: 'INTERCEPT_REQUEST',
     data: requestInfo
@@ -38,19 +37,16 @@ window.fetch = function(...args) {
   return new Promise((resolve, reject) => {
     let responseListener;
     responseListener = (event) => {
-      console.log('[Fetch] Received message event:', event.data?.type, 'from', event.data?.from);
         if (event.source !== window) return;
 
         const { type, data } = event.data;
         if (type === 'FORWARD_RESPONSE' && data.id === requestId && data.from === 'content-script') {
           window.removeEventListener('message', responseListener);
           // 收到代理响应
-          console.log('[Fetch] FORWARD_RESPONSE received for ID:', requestId, 'error:', data.error);
           const fallbackToOrigin = data.fallbackToOrigin !== false;
 
           if (data.error === 'NO_RULE_MATCHED') {
             // 无匹配规则，使用原始请求
-            console.log('[Fetch] No rule matched for ID:', requestId, 'using original request');
             originalFetch.apply(window, args)
               .then(resolve)
               .catch(reject);
@@ -78,26 +74,86 @@ window.fetch = function(...args) {
           }
 
           // 构建 Response 对象
-          const responseInit = {
-            status: data.status,
-            statusText: data.statusText,
-            headers: data.headers || {}
-          };
-
           const responseBody = typeof data.body === 'string' ? data.body : JSON.stringify(data.body);
+          const responseHeaders = data.headers || {};
+          
+          // 尝试使用标准方式创建 Response 对象
           let response;
           try {
-            response = new Response(responseBody, responseInit);
-            // 代理响应已注入
-          } catch (e) {
-            // 如果创建失败，尝试不带 headers
-            response = new Response(responseBody, { 
-              status: data.status, 
-              statusText: data.statusText 
+            // 确保 headers 是有效的 Headers 对象或可序列化的对象
+            const headersInit = responseHeaders instanceof Headers ? responseHeaders : responseHeaders;
+            response = new Response(responseBody, {
+              status: data.status,
+              statusText: data.statusText,
+              headers: headersInit
             });
+          } catch (e) {
+            console.error('[Fetch] Failed to create Response with headers, trying alternative approach:', e);
+            
+            // 如果直接创建失败，尝试手动构建带有 headers 的 Response
+            response = new Response(responseBody, {
+              status: data.status,
+              statusText: data.statusText
+            });
+            
+            // 虽然 Response headers 是只读的，但我们可以尝试修改原型或使用其他方式
+            // 注意：这种方式可能在某些浏览器中不起作用，但值得尝试
+            if (typeof Object.defineProperty === 'function' && response.headers) {
+              try {
+                // 尝试重写 get 和 getAll 方法
+                const originalGet = response.headers.get;
+                const originalGetAll = response.headers.getAll;
+                const originalEntries = response.headers.entries;
+                
+                Object.defineProperty(response.headers, 'get', {
+                  value: function(header) {
+                    const normalizedHeader = header.toLowerCase();
+                    for (const [key, value] of Object.entries(responseHeaders)) {
+                      if (key.toLowerCase() === normalizedHeader) {
+                        return value;
+                      }
+                    }
+                    return originalGet.call(this, header);
+                  },
+                  writable: true,
+                  configurable: true
+                });
+                
+                Object.defineProperty(response.headers, 'getAll', {
+                  value: function(header) {
+                    const normalizedHeader = header.toLowerCase();
+                    const values = [];
+                    for (const [key, value] of Object.entries(responseHeaders)) {
+                      if (key.toLowerCase() === normalizedHeader) {
+                        values.push(value);
+                      }
+                    }
+                    if (values.length > 0) {
+                      return values;
+                    }
+                    return originalGetAll.call(this, header);
+                  },
+                  writable: true,
+                  configurable: true
+                });
+                
+                Object.defineProperty(response.headers, 'entries', {
+                  value: function() {
+                    const headerEntries = Object.entries(responseHeaders);
+                    if (headerEntries.length > 0) {
+                      return headerEntries[Symbol.iterator]();
+                    }
+                    return originalEntries.call(this);
+                  },
+                  writable: true,
+                  configurable: true
+                });
+              } catch (e2) {
+                console.error('[Fetch] Failed to modify Response headers methods:', e2);
+              }
+            }
           }
           // 返回代理响应
-          console.log('[Fetch] Resolving with forwarded response for ID:', requestId, 'status:', data.status);
           resolve(response);
         }
       };
@@ -149,7 +205,6 @@ XHRPrototype.send = function(body) {
   let timeoutId = null;
 
   // 记录请求
-  console.log('[XHR] Posting INTERCEPT_REQUEST, ID:', requestId, 'URL:', xhr.__url);
   window.postMessage({
     type: 'INTERCEPT_REQUEST',
     data: {
@@ -197,12 +252,11 @@ XHRPrototype.send = function(body) {
       clearTimeout(timeoutId);
     }
     
-    console.log('[XHR] Executing original request');
     return originalSend.call(xhr, body);
   };
 
   // 构建并返回代理响应
-  const buildProxyResponse = (status, statusText, responseBody, responseObj) => {
+  const buildProxyResponse = (status, statusText, responseBody, responseObj, headers) => {
     proxyResponseReceived = true;
     
     // 清理事件监听器和超时
@@ -238,7 +292,33 @@ XHRPrototype.send = function(body) {
         configurable: true
       });
       
-      // 设置 responseType 为 text（默认值）
+      // 设置响应头
+      Object.defineProperty(xhr, 'getResponseHeader', {
+        value: function(header) {
+          if (!headers) return null;
+          const normalizedHeader = header.toLowerCase();
+          for (const [key, value] of Object.entries(headers)) {
+            if (key.toLowerCase() === normalizedHeader) {
+              return value;
+            }
+          }
+          return null;
+        },
+        writable: false,
+        configurable: true
+      });
+      
+      Object.defineProperty(xhr, 'getAllResponseHeaders', {
+        value: function() {
+          if (!headers) return '';
+          return Object.entries(headers)
+            .map(([key, value]) => `${key}: ${value}`)
+            .join('\r\n');
+        },
+        writable: false,
+        configurable: true
+      });
+      
       Object.defineProperty(xhr, 'responseType', {
         value: 'text',
         writable: false,
@@ -291,7 +371,6 @@ XHRPrototype.send = function(body) {
       });
       
       // 2. 触发 readyState 3 的 readystatechange 事件
-      console.log('[XHR] Triggering readystatechange (loading state)');
       // 先触发 onreadystatechange 属性
       if (xhr.onreadystatechange) {
         try {
@@ -317,7 +396,6 @@ XHRPrototype.send = function(body) {
         });
         
         // 4. 触发 readyState 4 的 readystatechange 事件
-        console.log('[XHR] Triggering readystatechange (done state)');
         // 先触发 onreadystatechange 属性
         if (xhr.onreadystatechange) {
           try {
@@ -334,7 +412,6 @@ XHRPrototype.send = function(body) {
         }
         
         // 5. 触发 load 事件
-        console.log('[XHR] Triggering load event');
         // 先触发 onload 属性
         if (xhr.onload) {
           try {
@@ -351,7 +428,6 @@ XHRPrototype.send = function(body) {
         }
         
         // 6. 触发 loadend 事件
-        console.log('[XHR] Triggering loadend event');
         try {
           xhr.dispatchEvent(new ProgressEvent('loadend'));
         } catch (e) {
@@ -366,7 +442,6 @@ XHRPrototype.send = function(body) {
         }
         // 如果请求失败，可以考虑触发 error 事件
         if (status >= 400) {
-          console.log('[XHR] Triggering error event for status:', status);
           // 触发 onerror 属性
           if (xhr.onerror) {
             try {
@@ -409,21 +484,18 @@ XHRPrototype.send = function(body) {
     if (data.error) {
       // 代理请求失败，根据设置决定是否回源
       if (fallbackToOrigin) {
-        console.log('[XHR] Proxy failed, falling back to original request');
         executeOriginalRequest();
       } else {
-        console.log('[XHR] Proxy failed, returning error directly');
         // 构建错误响应
         const errorResponse = JSON.stringify({ error: data.error });
-        buildProxyResponse(502, 'Proxy Error', errorResponse, { error: data.error });
+        buildProxyResponse(502, 'Proxy Error', errorResponse, { error: data.error }, data.headers);
       }
       return;
     }
     
     // 有规则匹配，返回代理响应
-    console.log('[XHR] Proxy response received, using proxy response');
     const responseBody = typeof data.body === 'string' ? data.body : JSON.stringify(data.body);
-    buildProxyResponse(data.status, data.statusText || 'OK', responseBody, data.body);
+    buildProxyResponse(data.status, data.statusText || 'OK', responseBody, data.body, data.headers);
   };
 
   // 监听代理响应
@@ -433,12 +505,10 @@ XHRPrototype.send = function(body) {
   };
 
   window.addEventListener('message', responseListener);
-  console.log('[XHR] Listening for FORWARD_RESPONSE for ID:', requestId);
 
   // 10 秒超时处理
   timeoutId = setTimeout(() => {
     if (!proxyResponseReceived) {
-      console.log('[XHR] Timeout waiting for proxy response, executing original request');
       executeOriginalRequest();
     }
   }, 10000);

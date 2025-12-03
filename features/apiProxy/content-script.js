@@ -95,8 +95,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 window.addEventListener('message', async (event) => {
     // 只接收来自同一窗口的消息
     if (event.source !== window) return;
-    // 诊断：打印接收到的消息类型
-    try { console.log('[Content Script] window.message received:', event.data?.type, 'id:', event.data?.data?.id); } catch (e) {}
 
     const { type, data } = event.data;
 
@@ -110,7 +108,6 @@ window.addEventListener('message', async (event) => {
     try {
       // 处理请求拦截
       if (type === 'INTERCEPT_REQUEST') {
-        console.log('[Content Script] INTERCEPT_REQUEST received, ID:', data.id, 'URL:', data.url);
         // 发送请求信息到 background script
         chrome.runtime.sendMessage({ type: 'INTERCEPT_REQUEST', data: data, tabUrl: window.location.href }, (response) => {
           if (chrome.runtime.lastError) {
@@ -125,11 +122,9 @@ window.addEventListener('message', async (event) => {
 
           if (response && response.matched && response.response) {
             // 如果请求被转发，将代理响应发送回 injected script
-            console.log('[Content Script] Sending FORWARD_RESPONSE for ID:', data.id, 'status:', response.response.status);
             window.postMessage({ type: 'FORWARD_RESPONSE', data: { id: data.id, status: response.response.status, statusText: response.response.statusText, headers: response.response.headers || {}, body: response.response.body, error: null, fallbackToOrigin: response.fallbackToOrigin !== false, from: 'content-script' } }, '*');
           } else {
             // 没有匹配的规则或其他错误，让原始请求继续
-            console.log('[Content Script] No rule matched or error for ID:', data.id, ', letting original request continue');
             window.postMessage({ type: 'FORWARD_RESPONSE', data: { id: data.id, error: 'NO_RULE_MATCHED', matched: false, fallbackToOrigin: response?.fallbackToOrigin !== false, from: 'content-script' } }, '*');
           }
         });
@@ -137,13 +132,12 @@ window.addEventListener('message', async (event) => {
 
       // 处理响应记录
       if (type === 'INTERCEPT_RESPONSE') {
-        console.log('[Content Script] INTERCEPT_RESPONSE received, ID:', data.id);
+        console.log('[Content Script] INTERCEPT_RESPONSE received, ID:', data.url);
         chrome.runtime.sendMessage({ type: 'INTERCEPT_RESPONSE', data: data, tabUrl: window.location.href });
       }
 
       // 处理错误记录
       if (type === 'INTERCEPT_ERROR') {
-        console.log('[Content Script] INTERCEPT_ERROR received, ID:', data.id);
         chrome.runtime.sendMessage({ type: 'INTERCEPT_ERROR', data: data, tabUrl: window.location.href });
       }
     } catch (error) {
@@ -157,12 +151,3 @@ if (document.readyState === 'loading') {
 } else {
   injectScript();
 }
-
-// 如果在注入后一定时间内没有收到 handshake，打印诊断信息
-setTimeout(() => {
-  if (!handshakeReceived) {
-    console.warn('[Content Script] No INJECTED_LOADED handshake received after injection');
-  }
-}, 1500);
-
-console.log('Content script loaded for:', window.location.href);

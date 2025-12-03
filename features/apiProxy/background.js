@@ -712,8 +712,6 @@ async function handleInterceptRequest(data, tabUrl, sendResponse) {
       responseBody = await response.text();
     }
 
-    console.log('[Background] Response body type:', typeof responseBody, 'length:', responseBody?.length || responseBody?.toString?.length);
-
     // 记录响应
     await logger.addResponseLog({
       sourceUrl: data.url,
