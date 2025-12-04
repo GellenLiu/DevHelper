@@ -225,12 +225,15 @@ XHRPrototype.send = function(body) {
   xhr.onreadystatechange = function() {
     // 如果已经收到代理响应，忽略原始响应
     if (proxyResponseReceived) {
+      originalOnReadyStateChange.call(this);
+      console.log('proxyResponseReceived', proxyResponseReceived)
       return;
     }
     
     // 调用原始处理器
     if (originalOnReadyStateChange) {
       try {
+        console.log('originalOnReadyStateChange', xhr.readyState, xhr.__url)
         originalOnReadyStateChange.call(this);
       } catch (e) {
       }

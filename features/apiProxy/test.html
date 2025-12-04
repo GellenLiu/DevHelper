@@ -261,6 +261,7 @@
             <div class="button-group">
                 <button class="btn-primary" onclick="sendXHRRequest()">发送 XHR 请求</button>
                 <button class="btn-primary" onclick="sendFetchRequest()">发送 Fetch 请求</button>
+                <button class="btn-primary" onclick="sendObservableXHRRequest()">发送 Observable XHR 请求</button>
                 <button class="btn-secondary" onclick="clearResults()">清空结果</button>
             </div>
         </div>
@@ -482,6 +483,128 @@
                     <p><strong>状态:</strong> 请求失败</p>
                 `;
                 document.getElementById('fetch-response').textContent = '错误: ' + error.message;
+            }
+        }
+
+        // 发送 Observable XHR 请求（模拟业务代码在send()后重写onreadystatechange）
+        function sendObservableXHRRequest() {
+            const url = document.getElementById('test-url').value;
+            const data = document.getElementById('request-data').value;
+            const headers = document.getElementById('request-headers').value;
+            const method = currentMethod;
+
+            // 清空之前的结果
+            document.getElementById('xhr-status').textContent = '';
+            document.getElementById('xhr-info').innerHTML = '';
+            document.getElementById('xhr-response').textContent = '';
+
+            try {
+                // 解析 JSON 数据
+                const parsedData = method === 'GET' ? null : JSON.parse(data);
+                const parsedHeaders = JSON.parse(headers);
+
+                // 创建 XHR 对象
+                const xhr = new XMLHttpRequest();
+                xhr.open(method, url, true);
+
+                // 设置请求头
+                Object.entries(parsedHeaders).forEach(([key, value]) => {
+                    xhr.setRequestHeader(key, value);
+                });
+
+                // 记录开始时间
+                const startTime = Date.now();
+   xhr.onreadystatechange = function() {
+                    if (xhr.readyState === 4) {
+                        const statusCode = xhr.status;
+                        const statusText = xhr.statusText;
+                        const response = xhr.responseText;
+
+                        // 显示状态码
+                        const statusElement = document.getElementById('xhr-status');
+                        statusElement.textContent = `${statusCode} ${statusText}`;
+                        statusElement.className = `status-code ${statusCode < 400 ? 'success' : 'error'}`;
+
+                        // 显示请求信息
+                        const infoElement = document.getElementById('xhr-info');
+                        infoElement.innerHTML = `
+                            <h4>请求信息</h4>
+                            <p><strong>方法:</strong> ${method}</p>
+                            <p><strong>URL:</strong> ${url}</p>
+                            <p><strong>状态:</strong> ${statusCode} ${statusText}</p>
+                            <p><strong>响应时间:</strong> ${Date.now() - startTime} ms</p>
+                            <p><strong>测试类型:</strong> Observable 模拟 (send()后设置onreadystatechange)</p>
+                        `;
+
+                        // 显示响应内容
+                        const responseElement = document.getElementById('xhr-response');
+                        try {
+                            // 尝试格式化 JSON 响应
+                            const parsedResponse = JSON.parse(response);
+                            responseElement.textContent = JSON.stringify(parsedResponse, null, 2);
+                        } catch (e) {
+                            // 非 JSON 响应直接显示
+                            responseElement.textContent = response;
+                        }
+                    }
+                };
+
+                // 发送请求
+                if (method === 'GET') {
+                    xhr.send();
+                } else {
+                    xhr.send(JSON.stringify(parsedData));
+                }
+
+                // 模拟业务代码在send()之后重写onreadystatechange
+                // 这是问题的关键：业务代码在send()后设置onreadystatechange
+             
+                // 模拟 Observable 订阅
+                // 这里模拟业务代码使用 Observable 包装 XHR 请求
+                const observable = {
+                    subscribe: function(observer) {
+                        // 记录订阅信息
+                        const infoElement = document.getElementById('xhr-info');
+                        infoElement.innerHTML += `
+                            <p><strong>Observable:</strong> 已订阅</p>
+                        `;
+                        // 返回取消订阅方法
+                        return {
+                            unsubscribe: function() {
+                                xhr.abort();
+                            }
+                        };
+                    }
+                };
+
+                // 订阅 Observable
+                observable.subscribe({
+                    next: function(value) {
+                        // 显示 next 触发信息
+                        const infoElement = document.getElementById('xhr-info');
+                        infoElement.innerHTML += `
+                            <p style="color: green;"><strong>Observable.next():</strong> 已触发 (readyState: ${value.readyState})</p>
+                        `;
+                    },
+                    complete: function() {
+                        // 显示 complete 触发信息
+                        const infoElement = document.getElementById('xhr-info');
+                        infoElement.innerHTML += `
+                            <p style="color: blue;"><strong>Observable.complete():</strong> 已触发</p>
+                        `;
+                    },
+                    error: function(error) {
+                        // 显示 error 触发信息
+                        const infoElement = document.getElementById('xhr-info');
+                        infoElement.innerHTML += `
+                            <p style="color: red;"><strong>Observable.error():</strong> 已触发 - ${error.message}</p>
+                        `;
+                    }
+                });
+            } catch (error) {
+                document.getElementById('xhr-status').textContent = '配置错误';
+                document.getElementById('xhr-status').className = 'status-code error';
+                document.getElementById('xhr-response').textContent = '错误: ' + error.message;
             }
         }
 
