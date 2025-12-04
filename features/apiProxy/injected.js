@@ -56,7 +56,6 @@ window.fetch = function(...args) {
           if (data.error) {
             // 代理请求失败，根据设置决定是否回源
             if (fallbackToOrigin) {
-              console.log('代理失败，自动回源');
               originalFetch.apply(window, args)
                 .then(resolve)
                 .catch(reject);
@@ -225,15 +224,13 @@ XHRPrototype.send = function(body) {
   xhr.onreadystatechange = function() {
     // 如果已经收到代理响应，忽略原始响应
     if (proxyResponseReceived) {
-      originalOnReadyStateChange.call(this);
-      console.log('proxyResponseReceived', proxyResponseReceived)
+      originalOnReadyStateChange && originalOnReadyStateChange.call(this);
       return;
     }
     
     // 调用原始处理器
     if (originalOnReadyStateChange) {
       try {
-        console.log('originalOnReadyStateChange', xhr.readyState, xhr.__url)
         originalOnReadyStateChange.call(this);
       } catch (e) {
       }

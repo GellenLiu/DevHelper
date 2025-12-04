@@ -307,6 +307,10 @@ body {
     flex-wrap: wrap;
 }
 
+.rule-detail-row-url {
+  width: 340px;;
+}
+
 .rule-detail-label {
     font-weight: 500;
     color: #666;
@@ -648,10 +652,13 @@ body {
 }
 
 .key-value-item {
-    display: grid;
-    grid-template-columns: 1fr 1fr auto;
+    display: flex;
     gap: 8px;
     align-items: center;
+    margin-bottom: 8px;
+}
+.header-type-select {
+    width: 200px !important;
 }
 
 .key-value-item input {
@@ -663,7 +670,12 @@ body {
     color: #e0e0e0;
 }
 
+.key-value-item input:first-child {
+   width: 200px;
+}
+
 .key-value-item button {
+    width: 100px;
     padding: 6px 8px;
     background: #37373d;
     border: 1px solid #4a4a4f;

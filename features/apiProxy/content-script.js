@@ -132,7 +132,6 @@ window.addEventListener('message', async (event) => {
 
       // 处理响应记录
       if (type === 'INTERCEPT_RESPONSE') {
-        console.log('[Content Script] INTERCEPT_RESPONSE received, ID:', data.url);
         chrome.runtime.sendMessage({ type: 'INTERCEPT_RESPONSE', data: data, tabUrl: window.location.href });
       }
 

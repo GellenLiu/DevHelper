@@ -219,9 +219,7 @@ function initializeEventListeners() {
       elements.resetBtn.addEventListener("click", resetAllSettings);
     }
 
-    console.log("Event listeners initialized successfully");
   } catch (error) {
-    console.error("Error initializing event listeners:", error);
   }
 }
 
@@ -284,13 +282,13 @@ function renderRulesList() {
             <div class="rule-info">
                 <div class="rule-name">${escapeHtml(rule.name)}</div>
                 <div class="rule-details">
-                    <div class="rule-detail-row">
+                    <div class="rule-detail-row rule-detail-row-url">
                         <span class="rule-detail-label">源:</span>
                         <span class="rule-detail-value">${escapeHtml(
                           rule.sourcePattern
                         )}</span>
                     </div>
-                    <div class="rule-detail-row">
+                    <div class="rule-detail-row rule-detail-row-url">
                         <span class="rule-detail-label">目标:</span>
                         <span class="rule-detail-value">${escapeHtml(
                           rule.targetUrl
@@ -372,8 +370,6 @@ function handleRuleAction(e) {
 }
 
 function openRuleEditor(ruleId = null) {
-  console.log("Opening rule editor, ruleId:", ruleId);
-
   try {
     currentEditingRuleId = ruleId;
     currentEditingHeaders = [];
@@ -415,10 +411,22 @@ function openRuleEditor(ruleId = null) {
 
       // 加载 Headers
       currentEditingHeaders = Object.entries(rule.headers || {}).map(
-        ([key, value]) => ({
-          key,
-          value,
-        })
+        ([key, value]) => {
+          // 检查是否已存在type字段，否则默认为fixed
+          if (typeof value === 'object' && value !== null) {
+            return {
+              key,
+              value: value.value,
+              type: value.type || 'fixed'
+            };
+          }
+          // 旧格式兼容处理
+          return {
+            key,
+            value,
+            type: 'fixed'
+          };
+        }
       );
       renderHeaders();
     } else {
@@ -460,7 +468,6 @@ function openRuleEditor(ruleId = null) {
         }
       }
       
-      console.log("Rule editor opened successfully");
     } else {
     }
   } catch (error) {
@@ -506,7 +513,10 @@ async function saveRule() {
   const headers = {};
   currentEditingHeaders.forEach((header) => {
     if (header.key.trim()) {
-      headers[header.key.trim()] = header.value.trim();
+      headers[header.key.trim()] = {
+        value: header.value.trim(),
+        type: header.type || 'fixed'
+      };
     }
   });
 
@@ -637,9 +647,20 @@ function renderHeaders() {
       currentEditingHeaders[index].key = e.target.value;
     });
 
+    // 添加类型选择下拉框
+    const typeSelect = document.createElement("select");
+    typeSelect.className = "header-type-select";
+    typeSelect.innerHTML = `
+      <option value="fixed" ${header.type === "fixed" || !header.type ? "selected" : ""}>固定值</option>
+      <option value="cookie" ${header.type === "cookie" ? "selected" : ""}>通过cookie获取值</option>
+    `;
+    typeSelect.addEventListener("change", (e) => {
+      currentEditingHeaders[index].type = e.target.value;
+    });
+
     const valueInput = document.createElement("input");
     valueInput.type = "text";
-    valueInput.placeholder = "Header 值";
+    valueInput.placeholder = header.type === "cookie" ? "Cookie 键名" : "Header 值";
     valueInput.value = escapeHtml(header.value);
     valueInput.addEventListener("change", (e) => {
       currentEditingHeaders[index].value = e.target.value;
@@ -652,6 +673,7 @@ function renderHeaders() {
     deleteBtn.addEventListener("click", () => removeHeader(index));
 
     item.appendChild(keyInput);
+    item.appendChild(typeSelect);
     item.appendChild(valueInput);
     item.appendChild(deleteBtn);
     elements.headersList.appendChild(item);
@@ -659,7 +681,7 @@ function renderHeaders() {
 }
 
 function addHeaderField() {
-  currentEditingHeaders.push({ key: "", value: "" });
+  currentEditingHeaders.push({ key: "", value: "", type: "fixed" });
   renderHeaders();
 }
 

@@ -659,7 +659,33 @@ async function handleInterceptRequest(data, tabUrl, sendResponse) {
 
     // 添加自定义 Headers
     if (rule.headers) {
-      Object.assign(forwardOptions.headers, rule.headers);
+      for (const [headerName, headerConfig] of Object.entries(rule.headers)) {
+        // 处理不同格式的 header 配置
+        let headerValue = '';
+        let headerType = 'fixed';
+        
+        // 新格式：{ value: '...', type: 'fixed|cookie' }
+        if (typeof headerConfig === 'object' && headerConfig !== null) {
+          headerValue = headerConfig.value || '';
+          headerType = headerConfig.type || 'fixed';
+        } else {
+          // 旧格式：直接是字符串值
+          headerValue = headerConfig;
+        }
+        
+        // 根据类型处理 header 值
+        if (headerType === 'cookie') {
+          // 从 cookie 中获取值
+          const cookieKey = headerValue;
+          if (cookies && cookies[cookieKey]) {
+            forwardOptions.headers[headerName] = cookies[cookieKey];
+          }
+          // 如果 cookie 中没有对应值，不设置该 header
+        } else {
+          // 固定值，直接设置
+          forwardOptions.headers[headerName] = headerValue;
+        }
+      }
     }
 
     // 添加 Cookie 头
