@@ -1,0 +1,64 @@
+{
+  "manifest_version": 3,
+  "background": {
+    "service_worker": "src/background.js"
+  },
+  "name": "Dev Helper",
+  "version": "1.0",
+  "description": "A powerful browser extension for developers with multiple helpful tools",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting",
+    "sidePanel"
+  ],
+  "action": {
+    "default_popup": "src/popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "features/js-error-monitor/content.js",
+        "features/env-configurator/content.js"
+      ],
+      "run_at": "document_start"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "features/js-error-monitor/error-script.js",
+        "features/env-configurator/override-script.js",
+        "utils/json-loader.js",
+        "feature.config.js"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ],
+  "commands": {
+    "open-matechat": {
+      "suggested_key": {
+        "default": "Ctrl+M"
+      },
+      "description": "打开MateChat页面"
+    }
+  },
+  "side_panel": {
+    "default_path": "features/matechat/index.html"
+  }
+}

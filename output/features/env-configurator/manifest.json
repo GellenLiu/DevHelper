@@ -1,0 +1,46 @@
+{
+  "manifest_version": 3,
+  "name": "Env Configurator",
+  "version": "1.0.0",
+  "description": "管理和切换不同环境的配置参数，方便开发和测试。",
+  "author": "DevUI",
+  "action": {
+    "default_icon": {
+      "16": "./icon.png",
+      "48": "./icon.png",
+      "128": "./icon.png"
+    },
+    "default_popup": "index.html"
+  },
+  "icons": {
+    "16": "./icon.png",
+    "48": "./icon.png",
+    "128": "./icon.png"
+  },
+  "permissions": ["activeTab", "storage"],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_start"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["override-script.js"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "devui_feature": {
+    "id": "env-configurator",
+    "isEnabled": true,
+    "toggle": false,
+    "settingsUrl": "/features/env-configurator/index.html",
+    "storageKey": "envConfiguratorConfig",
+    "createdAt": "2025-08-15",
+    "category": "development",
+    "height": 500,
+    "width": 350,
+    "showHeader": false
+  }
+}

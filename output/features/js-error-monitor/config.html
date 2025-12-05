@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>JS Error Monitor Configuration</title>
+    <link rel="stylesheet" href="/features/js-error-monitor/config.css">
+</head>
+<body>
+    <div class="config-section">
+        <h3 class="config-title">JS Error Monitor Settings</h3>
+        <!-- 移除独立的启用开关，因为已在菜单中实现 -->
+        <div class="config-item" style="display: none;">
+            <label>
+                <input type="checkbox" id="enabled"> Enable JS Error Monitor
+            </label>
+        </div>
+        <div class="config-item">
+            <label for="newDomain">Add Monitored Domain (supports regex, * for all)</label>
+            <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+                <input type="text" id="newDomain" placeholder="e.g. example.com, *.test.com">
+                <button id="addDomain" style="width: auto;">Add</button>
+            </div>
+            <div id="domainList" style="border: 1px solid #ddd; border-radius: 6px; padding: 10px; max-height: 150px; overflow-y: auto;">
+                <!-- Domain list items will be added here dynamically -->
+                <div class="domain-item" style="display: none;">No domains added yet</div>
+            </div>
+        </div>
+        <div class="config-item">
+            <label>Error Types to Monitor</label>
+            <div class="checkbox-group">
+                <div class="checkbox-item"><label><input type="checkbox" id="monitorWindowError" checked> window.onerror</label></div>
+                <div class="checkbox-item"><label><input type="checkbox" id="monitorErrorEvent" checked> error event</label></div>
+                <div class="checkbox-item"><label><input type="checkbox" id="monitorUnhandledRejection" checked> unhandledrejection</label></div>
+                <div class="checkbox-item"><label><input type="checkbox" id="monitorConsoleError" checked> console.error</label></div>
+                <div class="checkbox-item"><label><input type="checkbox" id="monitorSyntaxError" checked> SyntaxError</label></div>
+                <div class="checkbox-item"><label><input type="checkbox" id="monitorReferenceError" checked> ReferenceError</label></div>
+                <div class="checkbox-item"><label><input type="checkbox" id="monitorTypeError" checked> TypeError</label></div>
+                <div class="checkbox-item"><label><input type="checkbox" id="monitorRangeError" checked> RangeError</label></div>
+                <div class="checkbox-item"><label><input type="checkbox" id="monitorURIError" checked> URIError</label></div>
+                <div class="checkbox-item"><label><input type="checkbox" id="monitorEvalError" checked> EvalError</label></div>
+            </div>
+        </div>
+        <div class="config-item">
+            <label>Error Message Filters (strings to ignore)</label>
+            <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+                <input type="text" id="newErrorMessageFilter" placeholder="e.g. 'deprecated', 'ignore this error'">
+                <button id="addErrorMessageFilter" style="width: auto;">Add</button>
+            </div>
+            <div id="errorMessageFilterList" style="border: 1px solid #ddd; border-radius: 6px; padding: 10px; max-height: 150px; overflow-y: auto;">
+                <!-- Filter list items will be added here dynamically -->
+                <div class="filter-item" style="display: none;">No filters added yet</div>
+            </div>
+        </div>
+        <div class="footer">
+          <button class="save-config-btn" id="saveConfig">Save Settings</button>
+        </div>
+    </div>
+    <script src="/features/js-error-monitor/config.js"></script>
+</body>
+</html>
