@@ -13,12 +13,13 @@
 
 以下是我们自主研发的核心工具，点击工具名称可查看详细文档：
 
-- **[API Proxy 接口代理转发工具](./features/apiProxy/README.md)** - 强大的接口代理工具，支持请求拦截、修改、重定向和Mock数据，轻松处理复杂的接口测试场景
-- **[Env Configurator 环境配置修改器](./features/env-configurator/README.md)** - 智能环境配置管理工具，支持动态切换和修改环境变量，无需重新构建即可切换开发/测试/生产环境
-- **[JS Error Monitor 前端稳定性JS错误监控](./features/js-error-monitor/readme.md)** - 实时JavaScript错误监控系统，捕获页面运行时错误，提供详细的错误堆栈和上下文信息，便于快速定位问题
-- **[MateChat 个人智能对话助手](./features/matechat/readme.md)** - 智能对话助手扩展，支持直连LLM
+- **[API Proxy 接口代理转发工具](./features/apiProxy/README.md)** - 将页面XHR/Fetch请求，转发到其他后端环境，支持配置多条规则，支持cookie自动获取，header配置等
+- **[Env Configurator 环境配置修改器](./features/env-configurator/README.md)** - 前端环境配置设置工具，支持动态切换和修改环境变量，无需重新构建即可切换开发/测试/生产环境
+- **[JS Error Monitor 前端JS错误监控工具](./features/js-error-monitor/readme.md)** - 实时JavaScript错误监控系统，捕获页面运行时错误，提供详细的错误堆栈和上下文信息，便于快速定位问题
+- **[Personal AI Helper for MateChat 个人智能对话助手](./features/matechat/readme.md)** - 基于MateChat构建的个人智能对话助手，支持直连LLM，打造个人智能助手
+- **[Web Perf Tester 网页性能测试工具](./features/web-performance-test/readme.md)** - 网页性能测试工具，多次测试取平均值，支持RTTI指标测试
 
-## 📦 其他常用Chrome扩展推荐
+## 📦 其他优秀工具推荐
 
 以下是前端开发者常用的优质Chrome扩展，点击插件名称可直接跳转到Chrome商店安装：
 
@@ -28,6 +29,8 @@
 - **[Tampermonkey (篡改猴)](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo)** - 强大的脚本管理器，允许安装和运行自定义脚本，扩展浏览器功能
 - **[FeHelper](https://chrome.google.com/webstore/detail/fehelper%E5%89%8D%E7%AB%AF%E5%BC%80%E5%8F%91%E5%8A%A9%E6%89%8B/pkgccpejnmalmdinmhkkfafefagiiiad)** - 前端开发助手，集成JSON格式化、代码压缩、二维码生成等多种实用工具
 - **[Allow CORS: Access-Control-Allow-Origin](https://chrome.google.com/webstore/detail/allow-cors-access-control/lhobafahddgcelffkeicbaginigeejlf)** - 允许跨域请求，解决开发过程中的跨域问题，支持自定义配置
+- **[Imagine](https://github.com/meowtec/Imagine)** - 本地图片压缩工具 
+- **[SwitchHosts](https://switchhosts.vercel.app/zh)** - 一个管理、切换多个host方案的工具
 
 ## 📥 安装使用
 

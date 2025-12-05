@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>更多性能指标</title>
+    <style>
+        /* 从popup.css复制基础样式 */
+        :root {
+            --primary-color: #4a90e2;
+            --primary-hover: #357abd;
+            --secondary-color: #6c757d;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --background-color: #f8f9fa;
+            --card-background: #ffffff;
+            --text-color: #333333;
+            --text-secondary: #666666;
+            --border-color: #e1e4e8;
+            --shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            --border-radius: 8px;
+            --spacing-xs: 4px;
+            --spacing-sm: 8px;
+            --spacing-md: 16px;
+            --spacing-lg: 20px;
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: var(--card-background);
+            border-radius: var(--border-radius);
+            padding: var(--spacing-lg);
+            box-shadow: var(--shadow);
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        h2 {
+            font-size: 18px;
+            font-weight: 600;
+            margin: var(--spacing-lg) 0 var(--spacing-md);
+            color: var(--text-color);
+        }
+
+        /* 结果网格样式 */
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .result-card {
+            background-color: var(--background-color);
+            border-radius: var(--border-radius);
+            padding: var(--spacing-md);
+            transition: var(--transition);
+            border: 1px solid var(--border-color);
+        }
+
+        .result-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        }
+
+        .result-card-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .result-card-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .back-btn {
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: white;
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--border-radius);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: var(--transition);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .back-btn:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="#" class="back-btn" onclick="window.close()">关闭</a>
+        <h1>更多性能指标</h1>
+        
+        <div id="more-metrics-results" class="results-grid">
+            <!-- 页面总加载时间 -->
+            <div class="result-card">
+                <div class="result-card-label">页面总加载时间</div>
+                <div id="total-load-time" class="result-card-value">--</div>
+            </div>
+            
+            <!-- DNS解析时间 -->
+            <div class="result-card">
+                <div class="result-card-label">DNS解析时间</div>
+                <div id="dns-time" class="result-card-value">--</div>
+            </div>
+            
+            <!-- TCP时间 -->
+            <div class="result-card">
+                <div class="result-card-label">TCP连接时间</div>
+                <div id="tcp-time" class="result-card-value">--</div>
+            </div>
+            
+            <!-- LCP -->
+            <div class="result-card">
+                <div class="result-card-label">最大内容绘制 (LCP)</div>
+                <div id="lcp" class="result-card-value">--</div>
+            </div>
+            
+            <!-- TTI -->
+            <div class="result-card">
+                <div class="result-card-label">可交互时间 (TTI)</div>
+                <div id="tti" class="result-card-value">--</div>
+            </div>
+            
+            <!-- RTTI -->
+            <div class="result-card">
+                <div class="result-card-label">元素渲染时间 (RTTI)</div>
+                <div id="rtti" class="result-card-value">--</div>
+            </div>
+            
+            <!-- CLS -->
+            <div class="result-card">
+                <div class="result-card-label">累积布局偏移 (CLS)</div>
+                <div id="cls" class="result-card-value">--</div>
+            </div>
+            
+            <!-- 白屏时间 -->
+            <div class="result-card">
+                <div class="result-card-label">白屏时间</div>
+                <div id="white-screen-time" class="result-card-value">--</div>
+            </div>
+            
+            <!-- TTFB -->
+            <div class="result-card">
+                <div class="result-card-label">首字节时间 (TTFB)</div>
+                <div id="ttfb" class="result-card-value">--</div>
+            </div>
+            
+            <!-- TBT -->
+            <div class="result-card">
+                <div class="result-card-label">总阻塞时间 (TBT)</div>
+                <div id="tbt" class="result-card-value">--</div>
+            </div>
+            
+            <!-- Long Tasks -->
+            <div class="result-card">
+                <div class="result-card-label">长任务数量</div>
+                <div id="long-tasks" class="result-card-value">--</div>
+            </div>
+            
+            <!-- PFS绘制帧率 -->
+            <div class="result-card">
+                <div class="result-card-label">PFS绘制帧率</div>
+                <div id="fps" class="result-card-value">--</div>
+            </div>
+            
+            <!-- 网络耗时 -->
+            <div class="result-card">
+                <div class="result-card-label">网络耗时</div>
+                <div id="network-time" class="result-card-value">--</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="more-metrics.js"></script>
+</body>
+</html>

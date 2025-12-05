@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>性能测试页面</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background-color: #4a90e2;
+            color: white;
+            padding: 40px 0;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+        
+        .intro {
+            background-color: white;
+            padding: 30px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .image-section {
+            background-color: white;
+            padding: 30px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .image-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        img {
+            width: 100%;
+            height: auto;
+            border-radius: 4px;
+            transition: transform 0.3s ease;
+        }
+        
+        img:hover {
+            transform: scale(1.02);
+        }
+        
+        .dynamic-content {
+            background-color: white;
+            padding: 30px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .dynamic-item {
+            background-color: #f0f0f0;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 4px;
+            opacity: 0;
+            transition: all 0.5s ease;
+        }
+        
+        .dynamic-item.loaded {
+            opacity: 1;
+        }
+        
+        .cls-test {
+            background-color: white;
+            padding: 30px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .cls-box {
+            background-color: #e74c3c;
+            color: white;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 4px;
+            transition: all 0.5s ease;
+            cursor: pointer;
+        }
+        
+        .cls-box.expanded {
+            padding: 40px;
+            background-color: #c0392b;
+        }
+        
+        .rtti-test {
+            background-color: white;
+            padding: 30px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        #rtti-target {
+            background-color: #27ae60;
+            color: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+            font-size: 18px;
+            text-align: center;
+        }
+        
+        .video-section {
+            background-color: white;
+            padding: 30px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        video {
+            width: 100%;
+            max-width: 800px;
+            display: block;
+            margin: 20px auto;
+            border-radius: 4px;
+        }
+        
+        footer {
+            background-color: #34495e;
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+            border-radius: 8px;
+        }
+        
+        .large-element {
+            background-color: #f39c12;
+            color: white;
+            padding: 60px 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>性能测试页面</h1>
+            <p>用于测试浏览器性能指标的综合页面</p>
+        </header>
+        
+        <section class="intro">
+            <h2>页面介绍</h2>
+            <p>这个页面包含多种类型的内容，用于测试浏览器的各项性能指标。包括文本、图片、视频、动态内容和布局变化等。</p>
+            <p>您可以使用性能测试插件来测量以下指标：</p>
+            <ul>
+                <li>加载时间 - 页面完全加载所需的时间</li>
+                <li>FCP (First Contentful Paint) - 首次内容绘制时间</li>
+                <li>LCP (Largest Contentful Paint) - 最大内容绘制时间</li>
+                <li>CLS (Cumulative Layout Shift) - 累积布局偏移</li>
+                <li>TTI (Time to Interactive) - 可交互时间</li>
+                <li>RTTI (Resource Time to Interactive) - 资源可交互时间</li>
+            </ul>
+        </section>
+        
+        <section class="image-section">
+            <h2>图片内容</h2>
+            <div class="image-container">
+                <img src="https://picsum.photos/id/1/800/600" alt="测试图片1" loading="lazy">
+                <img src="https://picsum.photos/id/2/800/600" alt="测试图片2" loading="lazy">
+                <img src="https://picsum.photos/id/3/800/600" alt="测试图片3" loading="lazy">
+                <img src="https://picsum.photos/id/4/800/600" alt="测试图片4" loading="lazy">
+                <img src="https://picsum.photos/id/5/800/600" alt="测试图片5" loading="lazy">
+                <img src="https://picsum.photos/id/6/800/600" alt="测试图片6" loading="lazy">
+            </div>
+        </section>
+        
+        <section class="large-element">
+            <h2>大型元素（用于测试LCP）</h2>
+            <p>这个元素用于测试最大内容绘制(LCP)指标。它是页面中较大的元素之一。</p>
+        </section>
+        
+        <section class="dynamic-content">
+            <h2>动态加载内容</h2>
+            <p>以下内容将在页面加载后动态显示：</p>
+            <div class="dynamic-item">动态内容项 1 - 将在1秒后显示</div>
+            <div class="dynamic-item">动态内容项 2 - 将在2秒后显示</div>
+            <div class="dynamic-item">动态内容项 3 - 将在3秒后显示</div>
+            <div class="dynamic-item">动态内容项 4 - 将在4秒后显示</div>
+            <div class="dynamic-item">动态内容项 5 - 将在5秒后显示</div>
+        </section>
+        
+        <section class="cls-test">
+            <h2>布局偏移测试（CLS）</h2>
+            <p>点击下方盒子会导致布局变化，用于测试累积布局偏移(CLS)指标：</p>
+            <div class="cls-box" onclick="toggleExpanded(this)">点击我展开/收缩</div>
+            <p>这段文字位于可展开盒子下方。当盒子展开或收缩时，这段文字会上下移动，产生布局偏移。</p>
+            <div class="cls-box" onclick="toggleExpanded(this)">另一个可展开盒子</div>
+            <p>更多测试文字，用于观察布局变化。</p>
+        </section>
+        
+        <section class="rtti-test">
+            <h2>RTTI测试元素</h2>
+            <p>以下元素可用于测试RTTI（资源可交互时间）指标。您可以使用插件选择此元素：</p>
+            <div id="rtti-target">
+                <h3>RTTI测试目标元素</h3>
+                <p>选择器：#rtti-target</p>
+                <p>这个元素用于测试RTTI指标，即元素出现时间减去加载开始时间。</p>
+            </div>
+        </section>
+        
+        <section class="video-section">
+            <h2>视频内容</h2>
+            <video controls muted poster="https://picsum.photos/id/10/800/450">
+                <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+                您的浏览器不支持HTML5视频。
+            </video>
+            <p>上述视频用于测试包含视频内容的页面性能。</p>
+        </section>
+        
+        <footer>
+            <p>性能测试页面 &copy; 2023</p>
+        </footer>
+    </div>
+    
+    <script>
+        // 模拟动态内容加载
+        setTimeout(() => {
+            document.querySelectorAll('.dynamic-item')[0].classList.add('loaded');
+        }, 1000);
+        
+        setTimeout(() => {
+            document.querySelectorAll('.dynamic-item')[1].classList.add('loaded');
+        }, 2000);
+        
+        setTimeout(() => {
+            document.querySelectorAll('.dynamic-item')[2].classList.add('loaded');
+        }, 3000);
+        
+        setTimeout(() => {
+            document.querySelectorAll('.dynamic-item')[3].classList.add('loaded');
+        }, 4000);
+        
+        setTimeout(() => {
+            document.querySelectorAll('.dynamic-item')[4].classList.add('loaded');
+        }, 5000);
+        
+        // 模拟布局变化
+        function toggleExpanded(element) {
+            element.classList.toggle('expanded');
+        }
+        
+        // 延迟加载RTTI目标元素，模拟异步加载
+        setTimeout(() => {
+            const rttiTarget = document.getElementById('rtti-target');
+            rttiTarget.style.opacity = '1';
+        }, 1500);
+        
+        // 添加更多动态内容
+        setTimeout(() => {
+            const container = document.querySelector('.container');
+            const newSection = document.createElement('section');
+            newSection.className = 'dynamic-content';
+            newSection.innerHTML = `
+                <h2>延迟加载的新内容</h2>
+                <p>这段内容是在页面加载后6秒动态添加的，用于测试动态内容对性能的影响。</p>
+                <div class="large-element">
+                    <p>这是一个动态添加的大型元素，可能会影响LCP指标。</p>
+                </div>
+            `;
+            container.insertBefore(newSection, container.lastElementChild);
+        }, 6000);
+    </script>
+</body>
+</html>

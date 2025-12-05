@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Performance Tester</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 顶部栏 -->
+        <div class="header">
+            <h1>Web Pref Tester</h1>
+            <div class="toggle">
+                <input type="checkbox" id="plugin-toggle" checked>
+                <label class="slider" for="plugin-toggle"></label>
+            </div>
+        </div>
+
+        <!-- RTTI元素选择 -->
+        <div class="section">
+            <h3>RTTI 元素</h3>
+            <div class="element-selector-container">
+                <input type="text" id="element-selector-input" placeholder="输入CSS选择器" class="selector-input">
+                <button id="select-element-btn" class="btn-icon" title="选择元素">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"></path>
+                        <path d="M13 13l6 6"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- 配置选项 -->
+        <div class="section">
+            <h3>检测配置</h3>
+            <div class="config-grid">
+                <div class="config-item">
+                    <label for="refresh-count">次数:</label>
+                    <input type="number" id="refresh-count" min="1" max="10" value="5">
+                </div>
+                <div class="config-item">
+                    <label for="refresh-interval">间隔 (ms):</label>
+                    <input type="number" id="refresh-interval" min="500" max="5000" value="1000">
+                </div>
+            </div>
+        </div>
+
+        <!-- 开始检测按钮 -->
+        <div class="section">
+            <button id="start-test-btn" class="btn-primary">开始检测</button>
+            <div id="test-status" class="status-text"></div>
+        </div>
+
+        <!-- 性能指标结果 -->
+        <div class="section">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3>性能指标 (平均值)</h3>
+                <a href="#" id="more-metrics-btn" style="color: #4a90e2c2; text-decoration: none; font-size: 12px;">更多</a>
+            </div>
+            <div id="performance-results" class="results-grid-new">
+                <div class="result-card">
+                    <div class="result-card-label">加载时间</div>
+                    <div id="load-time" class="result-card-value">--</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-card-label">FCP</div>
+                    <div id="fcp" class="result-card-value">--</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-card-label">TTI</div>
+                    <div id="tti" class="result-card-value">--</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-card-label">RTTI</div>
+                    <div id="rtti" class="result-card-value">--</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-card-label">LCP</div>
+                    <div id="lcp" class="result-card-value">--</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-card-label">CLS</div>
+                    <div id="cls" class="result-card-value">--</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="popup.js"></script>
+</body>
+</html>
