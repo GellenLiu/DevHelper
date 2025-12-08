@@ -31,6 +31,7 @@
 - **[Allow CORS: Access-Control-Allow-Origin](https://chrome.google.com/webstore/detail/allow-cors-access-control/lhobafahddgcelffkeicbaginigeejlf)** - 允许跨域请求，解决开发过程中的跨域问题，支持自定义配置
 - **[Imagine](https://github.com/meowtec/Imagine)** - 本地图片压缩工具 
 - **[SwitchHosts](https://switchhosts.vercel.app/zh)** - 一个管理、切换多个host方案的工具
+- **[automa](https://chromewebstore.google.com/detail/automa/infppggnoaenmfagbfknfkancpbljcca?hl=zh-CN&utm_source=ext_sidebar) - 浏览器自动工作流工具
 
 ## 📥 安装使用
 
@@ -47,7 +48,7 @@ cd DevHelper
 2. 在Chrome浏览器中加载扩展：
    - 打开Chrome浏览器并导航至 `chrome://extensions`
    - 在右上角启用"开发者模式"
-   - 点击"加载已解压的扩展程序"并选择项目根目录
+   - 点击"加载已解压的扩展程序" (Env Configurator、JS Error Monitor选择output目录，其他选择features下对应工具目录)
 
 ## 🤝 贡献指南
 
