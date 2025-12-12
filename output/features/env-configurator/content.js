@@ -3,12 +3,12 @@ function injectScript() {
   if (document.getElementById("devhelper-override-script")) return;
 
   const script = document.createElement("script");
-  script.id = "devhelper-override-script";
+  script.id = "devhelper-envconfigurator-override-script";
   script.src = chrome.runtime.getURL(
     "/features/env-configurator/override-script.js"
   );
   script.type = "text/javascript";
-  document.head.appendChild(script);
+  document.documentElement.prepend(script);
 }
 
 // 监听来自override-script.js的消息
