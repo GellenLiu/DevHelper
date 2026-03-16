@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Access Required</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: #eee;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .lock-container {
+      text-align: center;
+      padding: 40px;
+      background: rgba(22, 33, 62, 0.9);
+      border-radius: 16px;
+      border: 1px solid #333;
+      max-width: 400px;
+      width: 90%;
+    }
+    .lock-icon {
+      font-size: 64px;
+      margin-bottom: 20px;
+    }
+    h1 {
+      color: #00d9ff;
+      font-size: 24px;
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      color: #888;
+      font-size: 14px;
+      margin-bottom: 30px;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: #888;
+      font-size: 13px;
+    }
+    input[type="password"] {
+      width: 100%;
+      padding: 12px 16px;
+      background: #0a0a15;
+      border: 1px solid #333;
+      border-radius: 8px;
+      color: #eee;
+      font-size: 16px;
+      transition: border-color 0.2s;
+    }
+    input[type="password"]:focus {
+      outline: none;
+      border-color: #00d9ff;
+    }
+    .btn {
+      width: 100%;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 14px;
+      transition: all 0.2s;
+      background: #00d9ff;
+      color: #1a1a2e;
+    }
+    .btn:hover {
+      background: #00b8d9;
+    }
+    .btn:disabled {
+      background: #555;
+      cursor: not-allowed;
+    }
+    .error {
+      color: #e74c3c;
+      font-size: 13px;
+      margin-top: 15px;
+      display: none;
+    }
+    .error.show {
+      display: block;
+    }
+    .hint {
+      color: #666;
+      font-size: 12px;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="lock-container">
+    <div class="lock-icon">🔒</div>
+    <h1>Admin Access Required</h1>
+    <p class="subtitle">Please enter the admin password to access the management panel</p>
+    
+    <form id="loginForm" onsubmit="return handleLogin(event)">
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" placeholder="Enter admin password" autofocus>
+      </div>
+      <button type="submit" class="btn" id="submitBtn">Unlock</button>
+      <p class="error" id="errorMsg">Invalid password. Please try again.</p>
+    </form>
+    
+    <p class="hint">Access from localhost does not require password</p>
+  </div>
+
+  <script>
+    async function handleLogin(e) {
+      e.preventDefault();
+      
+      const password = document.getElementById('password').value;
+      const submitBtn = document.getElementById('submitBtn');
+      const errorMsg = document.getElementById('errorMsg');
+      
+      if (!password) {
+        errorMsg.textContent = 'Please enter a password';
+        errorMsg.classList.add('show');
+        return false;
+      }
+      
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Verifying...';
+      errorMsg.classList.remove('show');
+      
+      try {
+        const res = await fetch('/_api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password })
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+          submitBtn.textContent = 'Success!';
+          window.location.reload();
+        } else {
+          errorMsg.textContent = data.error || 'Invalid password';
+          errorMsg.classList.add('show');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Unlock';
+          document.getElementById('password').value = '';
+          document.getElementById('password').focus();
+        }
+      } catch (err) {
+        errorMsg.textContent = 'Connection error. Please try again.';
+        errorMsg.classList.add('show');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Unlock';
+      }
+      
+      return false;
+    }
+    
+    document.getElementById('password').focus();
+  </script>
+</body>
+</html>
