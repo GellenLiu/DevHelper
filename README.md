@@ -9,6 +9,10 @@
 - **开源协作**：完全开源，欢迎社区贡献，持续迭代优化
 - **浏览器原生支持**：基于Chrome扩展开发，无需额外安装依赖，开箱即用
 
+## Agent Skills
+- **[chrome-bookmark-reader](.trae/skills/chrome-bookmark-reader/SKILL.md)** - 书签检索技能，读取Chrome浏览器的收藏书签，结构性返回给大模型进行分析。支持书签的快速检索和模糊搜索。
+- **[api-mock-server](.trae/skills/api-mock-server/SKILL.md)** - 支持rest接口mock、SSE流式接口mock、mock配置分享、mock地址分享等
+
 ## 🛠️ 项目自研工具列表
 
 以下是我们自主研发的核心工具，点击工具名称可查看详细文档：
