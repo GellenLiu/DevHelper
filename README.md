@@ -18,6 +18,7 @@
 - **[JS Error Monitor 前端JS错误监控工具](./features/js-error-monitor/readme.md)** - 实时JavaScript错误监控系统，捕获页面运行时错误，提供详细的错误堆栈和上下文信息，便于快速定位问题
 - **[Personal AI Helper for MateChat 个人智能对话助手](./features/matechat/readme.md)** - 基于MateChat构建的个人智能对话助手，支持直连LLM，打造个人智能助手
 - **[Web Perf Tester 网页性能测试工具](./features/web-performance-test/readme.md)** - 网页性能测试工具，多次测试取平均值，支持RTTI指标测试
+- **[API Mock服务](https://gitcode.com/liuguolin/apiMockServer)** - 支持rest接口mock、SSE流式接口mock、mock配置分享、mock地址分享等
 
 ## 📦 其他优秀工具推荐
 
